@@ -12,7 +12,7 @@ interface WelcomeScreenProps {
 
 const instructions = [
   "آزمون شامل ۳۰ پرسش در چهار قالب متفاوت است.",
-  "می‌توانید میان پرسش‌ها جابه‌جا شوید و پاسخ‌ها خودکار ذخیره می‌شوند.",
+  "پس از شروع، ۳۵ دقیقه فرصت دارید و زمان با بستن صفحه هم ادامه پیدا می‌کند.",
   "پس از ثبت نهایی، نتیجه و پاسخ‌نامهٔ تشریحی نمایش داده می‌شود.",
   "برای هر پرسش تنها یک پاسخ در نظر گرفته شده است."
 ];
@@ -41,7 +41,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           </div>
           <div>
             <ClockIcon />
-            <span><strong>بدون محدودیت</strong><small>با تمرکز پاسخ بده</small></span>
+            <span><strong>۳۵ دقیقه</strong><small>زمان ثابت آزمون</small></span>
           </div>
           <div>
             <ShieldIcon />
@@ -53,7 +53,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           شروع آزمون
           <ArrowIcon />
         </button>
-        <p className="start-note">با شروع آزمون، پاسخ‌ها در همین مرورگر ذخیره می‌شوند.</p>
+        <p className="start-note">با شروع آزمون، زمان و پاسخ‌ها در همین مرورگر ذخیره می‌شوند و زمان قابل شروع مجدد نیست.</p>
       </section>
 
       <aside className="instruction-card" aria-labelledby="instructions-title">

@@ -565,7 +565,7 @@ button:not(:disabled) {
 
 .exam-top {
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto;
+  grid-template-columns: auto minmax(180px, 1fr) auto auto;
   align-items: center;
   gap: 22px;
   margin-bottom: 30px;
@@ -587,6 +587,62 @@ button:not(:disabled) {
   color: var(--green);
   font: 800 0.82rem/1 monospace;
   text-align: left;
+}
+
+.exam-timer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 118px;
+  padding: 8px 12px;
+  color: var(--green-dark);
+  border: 1px solid color-mix(in srgb, var(--green) 25%, var(--line));
+  border-radius: 12px;
+  background: var(--green-soft);
+}
+
+.exam-timer.is-expired {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 35%, var(--line));
+  background: var(--red-soft);
+}
+
+.exam-timer svg {
+  width: 19px;
+  height: 19px;
+}
+
+.exam-timer small,
+.exam-timer strong {
+  display: block;
+  line-height: 1.25;
+}
+
+.exam-timer small {
+  font-size: 0.62rem;
+}
+
+.exam-timer strong {
+  direction: ltr;
+  font: 800 0.95rem/1.25 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.time-expired-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -14px 0 20px;
+  padding: 10px 13px;
+  color: var(--red);
+  border-radius: 12px;
+  background: var(--red-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.time-expired-notice svg {
+  width: 18px;
+  height: 18px;
 }
 
 .progress-track {
@@ -1448,7 +1504,7 @@ button:not(:disabled) {
   }
 
   .exam-top {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: 1fr auto auto;
     gap: 10px;
   }
 
@@ -1460,6 +1516,15 @@ button:not(:disabled) {
   .exam-top > span {
     grid-column: 2;
     grid-row: 1;
+  }
+
+  .exam-timer {
+    min-width: auto;
+    padding: 7px 9px;
+  }
+
+  .exam-timer small {
+    display: none;
   }
 
   .palette-card {

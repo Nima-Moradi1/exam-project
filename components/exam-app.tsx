@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { AlertIcon, ArrowIcon, FlagIcon } from "@/components/icons";
+import { AlertIcon, ArrowIcon, ClockIcon, FlagIcon } from "@/components/icons";
 import { QuestionCard } from "@/components/question-card";
 import { ResultsScreen } from "@/components/results-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
@@ -16,8 +16,10 @@ import type {
 type Phase = "welcome" | "exam" | "results";
 
 interface StoredAttempt {
-  version: 1;
+  version: 2;
   phase: "exam" | "results";
+  startedAt: number;
+  expiresAt: number;
   currentIndex: number;
   answers: Record<string, AnswerValue>;
   warningCount: number;
@@ -28,7 +30,8 @@ interface ExamAppProps {
   questions: readonly PublicQuestion[];
 }
 
-const STORAGE_KEY = "html-exam-attempt-v1";
+const STORAGE_KEY = "html-exam-attempt-v2";
+const EXAM_DURATION_MS = 35 * 60 * 1000;
 
 function emptyAnswers(questions: readonly PublicQuestion[]): Record<string, AnswerValue> {
   return Object.fromEntries(questions.map((question) => [question.id, null]));
@@ -36,6 +39,16 @@ function emptyAnswers(questions: readonly PublicQuestion[]): Record<string, Answ
 
 function hasAnswer(value: AnswerValue): boolean {
   return value !== null && (typeof value !== "string" || value.trim() !== "");
+}
+
+function formatRemainingTime(remainingMs: number): string {
+  const totalSeconds = Math.ceil(Math.max(0, remainingMs) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const formatUnit = (value: number) =>
+    value.toLocaleString("fa-IR", { minimumIntegerDigits: 2, useGrouping: false });
+
+  return `${formatUnit(minutes)}:${formatUnit(seconds)}`;
 }
 
 function readStoredAttempt(
@@ -47,8 +60,13 @@ function readStoredAttempt(
     const parsed = JSON.parse(raw) as Partial<StoredAttempt>;
     const validIds = new Set(questions.map(({ id }) => id));
     if (
-      parsed.version !== 1 ||
+      parsed.version !== 2 ||
       (parsed.phase !== "exam" && parsed.phase !== "results") ||
+      typeof parsed.startedAt !== "number" ||
+      !Number.isFinite(parsed.startedAt) ||
+      typeof parsed.expiresAt !== "number" ||
+      !Number.isFinite(parsed.expiresAt) ||
+      parsed.expiresAt - parsed.startedAt !== EXAM_DURATION_MS ||
       typeof parsed.currentIndex !== "number" ||
       !parsed.answers ||
       typeof parsed.answers !== "object"
@@ -66,8 +84,10 @@ function readStoredAttempt(
     }
     if (parsed.phase === "results" && !parsed.result) return null;
     return {
-      version: 1,
+      version: 2,
       phase: parsed.phase,
+      startedAt: parsed.startedAt,
+      expiresAt: parsed.expiresAt,
       currentIndex: Math.min(
         Math.max(0, Math.trunc(parsed.currentIndex)),
         questions.length - 1
@@ -96,6 +116,11 @@ export function ExamApp({ questions }: ExamAppProps) {
   const [result, setResult] = useState<GradeResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState(EXAM_DURATION_MS);
+  const [attemptLoaded, setAttemptLoaded] = useState(false);
+  const hasAttemptedTimedSubmission = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -108,7 +133,10 @@ export function ExamApp({ questions }: ExamAppProps) {
         setCurrentIndex(stored.currentIndex);
         setWarningCount(stored.warningCount);
         setResult(stored.result ?? null);
+        setStartedAt(stored.startedAt);
+        setExpiresAt(stored.expiresAt);
       }
+      setAttemptLoaded(true);
     });
     return () => {
       active = false;
@@ -118,15 +146,29 @@ export function ExamApp({ questions }: ExamAppProps) {
   useEffect(() => {
     if (phase === "welcome") return;
     const stored: StoredAttempt = {
-      version: 1,
+      version: 2,
       phase,
+      startedAt: startedAt ?? Date.now(),
+      expiresAt: expiresAt ?? Date.now() + EXAM_DURATION_MS,
       currentIndex,
       answers,
       warningCount,
       ...(result ? { result } : {})
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  }, [answers, currentIndex, phase, result, warningCount]);
+  }, [answers, currentIndex, expiresAt, phase, result, startedAt, warningCount]);
+
+  useEffect(() => {
+    if (phase !== "exam" || !expiresAt) return;
+
+    const updateRemainingTime = () => {
+      setRemainingMs(Math.max(0, expiresAt - Date.now()));
+    };
+
+    updateRemainingTime();
+    const interval = window.setInterval(updateRemainingTime, 250);
+    return () => window.clearInterval(interval);
+  }, [expiresAt, phase]);
 
   const warn = useCallback(() => {
     setWarningCount((count) => count + 1);
@@ -170,22 +212,17 @@ export function ExamApp({ questions }: ExamAppProps) {
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   function startExam() {
+    const now = Date.now();
     setAnswers(emptyAnswers(questions));
     setCurrentIndex(0);
     setWarningCount(0);
     setResult(null);
     setError("");
+    setStartedAt(now);
+    setExpiresAt(now + EXAM_DURATION_MS);
+    setRemainingMs(EXAM_DURATION_MS);
+    hasAttemptedTimedSubmission.current = false;
     setPhase("exam");
-  }
-
-  function restartExam() {
-    localStorage.removeItem(STORAGE_KEY);
-    setPhase("welcome");
-    setAnswers(emptyAnswers(questions));
-    setCurrentIndex(0);
-    setWarningCount(0);
-    setResult(null);
-    setError("");
   }
 
   function updateAnswer(value: AnswerValue) {
@@ -194,7 +231,7 @@ export function ExamApp({ questions }: ExamAppProps) {
     setError("");
   }
 
-  async function submitExam() {
+  const submitExam = useCallback(async () => {
     if (submitting || phase !== "exam") return;
     setSubmitting(true);
     setError("");
@@ -229,7 +266,16 @@ export function ExamApp({ questions }: ExamAppProps) {
     } finally {
       setSubmitting(false);
     }
-  }
+  }, [answers, phase, questions, submitting, warningCount]);
+
+  const isExpired = phase === "exam" && expiresAt !== null && remainingMs <= 0;
+
+  useEffect(() => {
+    if (isExpired && !submitting && !hasAttemptedTimedSubmission.current) {
+      hasAttemptedTimedSubmission.current = true;
+      void submitExam();
+    }
+  }, [isExpired, submitExam, submitting]);
 
   if (questions.length === 0) {
     return (
@@ -241,9 +287,13 @@ export function ExamApp({ questions }: ExamAppProps) {
     );
   }
 
+  if (!attemptLoaded) {
+    return <main className="empty-screen page-shell"><p>در حال بازیابی آزمون…</p></main>;
+  }
+
   if (phase === "welcome") return <WelcomeScreen onStart={startExam} />;
   if (phase === "results" && result) {
-    return <ResultsScreen result={result} onRestart={restartExam} />;
+    return <ResultsScreen result={result} />;
   }
 
   return (
@@ -277,7 +327,21 @@ export function ExamApp({ questions }: ExamAppProps) {
           <span style={{ width: `${progress}%` }} />
         </div>
         <span>{Math.round(progress).toLocaleString("fa-IR")}٪</span>
+        <div className={`exam-timer ${isExpired ? "is-expired" : ""}`} role="timer" aria-live="polite" aria-label={`زمان باقی‌مانده: ${formatRemainingTime(remainingMs)}`}>
+          <ClockIcon />
+          <div>
+            <small>زمان باقی‌مانده</small>
+            <strong>{formatRemainingTime(remainingMs)}</strong>
+          </div>
+        </div>
       </section>
+
+      {isExpired && (
+        <div className="time-expired-notice" role="status">
+          <AlertIcon />
+          زمان آزمون به پایان رسید؛ پاسخ‌ها در حال ثبت هستند.
+        </div>
+      )}
 
       <div className="exam-layout">
         <aside className="palette-card" aria-labelledby="palette-title">
@@ -298,6 +362,7 @@ export function ExamApp({ questions }: ExamAppProps) {
                   type="button"
                   className={`${answered ? "is-answered" : ""} ${current ? "is-current" : ""}`}
                   onClick={() => setCurrentIndex(index)}
+                  disabled={isExpired || submitting}
                   aria-label={`پرسش ${(index + 1).toLocaleString("fa-IR")}${answered ? "، پاسخ‌داده‌شده" : "، بی‌پاسخ"}${current ? "، پرسش فعلی" : ""}`}
                   aria-current={current ? "step" : undefined}
                 >
@@ -339,7 +404,7 @@ export function ExamApp({ questions }: ExamAppProps) {
             <button
               className="secondary-button"
               type="button"
-              disabled={currentIndex === 0}
+              disabled={currentIndex === 0 || isExpired || submitting}
               onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
             >
               <ArrowIcon className="arrow-back" />
@@ -351,12 +416,13 @@ export function ExamApp({ questions }: ExamAppProps) {
                 className="primary-button"
                 type="button"
                 onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
+                disabled={isExpired || submitting}
               >
                 پرسش بعدی
                 <ArrowIcon />
               </button>
             ) : (
-              <button className="submit-button" type="button" onClick={() => setShowConfirm(true)}>
+              <button className="submit-button" type="button" disabled={isExpired || submitting} onClick={() => setShowConfirm(true)}>
                 <FlagIcon />
                 ثبت نهایی آزمون
               </button>
@@ -364,7 +430,7 @@ export function ExamApp({ questions }: ExamAppProps) {
           </nav>
 
           {currentIndex < questions.length - 1 && (
-            <button className="finish-link" type="button" onClick={() => setShowConfirm(true)}>
+            <button className="finish-link" type="button" disabled={isExpired || submitting} onClick={() => setShowConfirm(true)}>
               پایان و ثبت آزمون
             </button>
           )}
