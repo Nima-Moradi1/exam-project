@@ -28,10 +28,26 @@ interface StoredAttempt {
 
 interface ExamAppProps {
   questions: readonly PublicQuestion[];
+  config?: ExamConfig;
 }
 
-const STORAGE_KEY = "html-exam-attempt-v2";
-const EXAM_DURATION_MS = 35 * 60 * 1000;
+export interface ExamConfig {
+  title: string;
+  description: string;
+  courseRange?: string;
+  durationMinutes: number;
+  storageKey: string;
+  apiExamId?: "css-part-1" | "css-part-2";
+  abandon?: { cooldownKey: string; returnTo: string };
+}
+
+const DEFAULT_CONFIG: ExamConfig = {
+  title: "HTML",
+  description: "با یک آزمون جامع و کاربردی، دانسته‌هایت دربارهٔ ساختار صفحات وب، عناصر معنایی، فرم‌ها و رسانه‌ها را محک بزن.",
+  durationMinutes: 35,
+  storageKey: "html-exam-attempt-v2",
+  abandon: { cooldownKey: "html-exam-cooldown-until", returnTo: "/" }
+};
 
 function emptyAnswers(questions: readonly PublicQuestion[]): Record<string, AnswerValue> {
   return Object.fromEntries(questions.map((question) => [question.id, null]));
@@ -52,10 +68,12 @@ function formatRemainingTime(remainingMs: number): string {
 }
 
 function readStoredAttempt(
-  questions: readonly PublicQuestion[]
+  questions: readonly PublicQuestion[],
+  durationMs: number,
+  storageKey: string
 ): StoredAttempt | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredAttempt>;
     const validIds = new Set(questions.map(({ id }) => id));
@@ -66,7 +84,7 @@ function readStoredAttempt(
       !Number.isFinite(parsed.startedAt) ||
       typeof parsed.expiresAt !== "number" ||
       !Number.isFinite(parsed.expiresAt) ||
-      parsed.expiresAt - parsed.startedAt !== EXAM_DURATION_MS ||
+      parsed.expiresAt - parsed.startedAt !== durationMs ||
       typeof parsed.currentIndex !== "number" ||
       !parsed.answers ||
       typeof parsed.answers !== "object"
@@ -104,7 +122,8 @@ function readStoredAttempt(
   }
 }
 
-export function ExamApp({ questions }: ExamAppProps) {
+export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
+  const durationMs = config.durationMinutes * 60 * 1000;
   const [phase, setPhase] = useState<Phase>("welcome");
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() =>
     emptyAnswers(questions)
@@ -113,20 +132,22 @@ export function ExamApp({ questions }: ExamAppProps) {
   const [warningCount, setWarningCount] = useState(0);
   const [showWarning, setShowWarning] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
   const [result, setResult] = useState<GradeResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [expiresAt, setExpiresAt] = useState<number | null>(null);
-  const [remainingMs, setRemainingMs] = useState(EXAM_DURATION_MS);
+  const [remainingMs, setRemainingMs] = useState(durationMs);
   const [attemptLoaded, setAttemptLoaded] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const hasAttemptedTimedSubmission = useRef(false);
 
   useEffect(() => {
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      const stored = readStoredAttempt(questions);
+      const stored = readStoredAttempt(questions, durationMs, config.storageKey);
       if (stored) {
         setPhase(stored.phase);
         setAnswers(stored.answers);
@@ -136,12 +157,16 @@ export function ExamApp({ questions }: ExamAppProps) {
         setStartedAt(stored.startedAt);
         setExpiresAt(stored.expiresAt);
       }
+      if (config.abandon) {
+        const until = Number(localStorage.getItem(config.abandon.cooldownKey) ?? 0);
+        if (Number.isFinite(until) && until > Date.now()) setCooldownUntil(until);
+      }
       setAttemptLoaded(true);
     });
     return () => {
       active = false;
     };
-  }, [questions]);
+  }, [config.abandon, config.storageKey, durationMs, questions]);
 
   useEffect(() => {
     if (phase === "welcome") return;
@@ -149,14 +174,14 @@ export function ExamApp({ questions }: ExamAppProps) {
       version: 2,
       phase,
       startedAt: startedAt ?? Date.now(),
-      expiresAt: expiresAt ?? Date.now() + EXAM_DURATION_MS,
+      expiresAt: expiresAt ?? Date.now() + durationMs,
       currentIndex,
       answers,
       warningCount,
       ...(result ? { result } : {})
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  }, [answers, currentIndex, expiresAt, phase, result, startedAt, warningCount]);
+    localStorage.setItem(config.storageKey, JSON.stringify(stored));
+  }, [answers, config.storageKey, currentIndex, durationMs, expiresAt, phase, result, startedAt, warningCount]);
 
   useEffect(() => {
     if (phase !== "exam" || !expiresAt) return;
@@ -187,6 +212,7 @@ export function ExamApp({ questions }: ExamAppProps) {
       const modifier = event.ctrlKey || event.metaKey;
       const blocked =
         event.key === "F12" ||
+        (event.altKey && ["arrowleft", "arrowright"].includes(key)) ||
         (modifier && ["c", "s", "p", "u"].includes(key)) ||
         (modifier && event.shiftKey && ["i", "j", "c"].includes(key));
       if (blocked) {
@@ -197,9 +223,31 @@ export function ExamApp({ questions }: ExamAppProps) {
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     document.addEventListener("keydown", onKeyDown);
+    const lockHistory = () => window.history.pushState(null, "", window.location.href);
+    const onPopState = () => {
+      lockHistory();
+      warn();
+    };
+    const onDocumentClick = (event: MouseEvent) => {
+      if ((event.target as Element | null)?.closest("a")) {
+        event.preventDefault();
+        warn();
+      }
+    };
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    lockHistory();
+    window.addEventListener("popstate", onPopState);
+    document.addEventListener("click", onDocumentClick, true);
+    window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
       document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("popstate", onPopState);
+      document.removeEventListener("click", onDocumentClick, true);
+      window.removeEventListener("beforeunload", onBeforeUnload);
     };
   }, [phase, warn]);
 
@@ -212,6 +260,7 @@ export function ExamApp({ questions }: ExamAppProps) {
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
   function startExam() {
+    if (cooldownUntil && cooldownUntil > Date.now()) return;
     const now = Date.now();
     setAnswers(emptyAnswers(questions));
     setCurrentIndex(0);
@@ -219,10 +268,18 @@ export function ExamApp({ questions }: ExamAppProps) {
     setResult(null);
     setError("");
     setStartedAt(now);
-    setExpiresAt(now + EXAM_DURATION_MS);
-    setRemainingMs(EXAM_DURATION_MS);
+    setExpiresAt(now + durationMs);
+    setRemainingMs(durationMs);
     hasAttemptedTimedSubmission.current = false;
     setPhase("exam");
+  }
+
+  function abandonExam() {
+    if (!config.abandon) return;
+    const until = Date.now() + 24 * 60 * 60 * 1000;
+    localStorage.removeItem(config.storageKey);
+    localStorage.setItem(config.abandon.cooldownKey, String(until));
+    window.location.assign(config.abandon.returnTo);
   }
 
   function updateAnswer(value: AnswerValue) {
@@ -246,7 +303,7 @@ export function ExamApp({ questions }: ExamAppProps) {
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: submittedAnswers, warningCount })
+        body: JSON.stringify({ answers: submittedAnswers, warningCount, ...(config.apiExamId ? { examId: config.apiExamId } : {}) })
       });
       const payload = await response.json() as GradeResult & { error?: string };
       if (!response.ok || payload.error) {
@@ -266,7 +323,7 @@ export function ExamApp({ questions }: ExamAppProps) {
     } finally {
       setSubmitting(false);
     }
-  }, [answers, phase, questions, submitting, warningCount]);
+  }, [answers, config.apiExamId, phase, questions, submitting, warningCount]);
 
   const isExpired = phase === "exam" && expiresAt !== null && remainingMs <= 0;
 
@@ -291,9 +348,17 @@ export function ExamApp({ questions }: ExamAppProps) {
     return <main className="empty-screen page-shell"><p>در حال بازیابی آزمون…</p></main>;
   }
 
-  if (phase === "welcome") return <WelcomeScreen onStart={startExam} />;
+  if (phase === "welcome") return (
+    <WelcomeScreen
+      onStart={startExam}
+      showCssEntry={!config.apiExamId}
+      exam={{ title: config.title, description: config.description, questionCount: questions.length, durationMinutes: config.durationMinutes, courseRange: config.courseRange }}
+      startDisabled={cooldownUntil !== null}
+      cooldownMessage={cooldownUntil ? `پس از انصراف، امکان شرکت دوباره از ${new Date(cooldownUntil).toLocaleString("fa-IR")} فراهم می‌شود.` : undefined}
+    />
+  );
   if (phase === "results" && result) {
-    return <ResultsScreen result={result} />;
+    return <ResultsScreen result={result} examTitle={config.title} />;
   }
 
   return (
@@ -335,6 +400,14 @@ export function ExamApp({ questions }: ExamAppProps) {
           </div>
         </div>
       </section>
+
+      {config.abandon && (
+        <div className="exam-abandon">
+          <button className="abandon-button" type="button" onClick={() => setShowAbandonConfirm(true)} disabled={submitting}>
+            انصراف از آزمون
+          </button>
+        </div>
+      )}
 
       {isExpired && (
         <div className="time-expired-notice" role="status">
@@ -388,8 +461,10 @@ export function ExamApp({ questions }: ExamAppProps) {
             <QuestionCard
               question={currentQuestion}
               number={currentIndex + 1}
+              total={questions.length}
               value={answers[currentQuestion.id] ?? null}
               onChange={updateAnswer}
+              disabled={isExpired || submitting}
             />
           )}
 
@@ -462,6 +537,19 @@ export function ExamApp({ questions }: ExamAppProps) {
                 {submitting ? <span className="button-spinner" /> : <FlagIcon />}
                 {submitting ? "در حال ثبت…" : "بله، ثبت شود"}
               </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {showAbandonConfirm && config.abandon && (
+        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setShowAbandonConfirm(false)}>
+          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="abandon-title" onMouseDown={(event) => event.stopPropagation()}>
+            <span className="confirm-dialog__icon"><AlertIcon /></span>
+            <h2 id="abandon-title">از آزمون انصراف می‌دهید؟</h2>
+            <p>پاسخ‌های فعلی حذف می‌شوند و تا ۲۴ ساعت آینده امکان شرکت دوباره در همین بخش را نخواهید داشت.</p>
+            <div>
+              <button className="secondary-button" type="button" onClick={() => setShowAbandonConfirm(false)}>بازگشت به آزمون</button>
+              <button className="abandon-button" type="button" onClick={abandonExam}>بله، انصراف می‌دهم</button>
             </div>
           </section>
         </div>

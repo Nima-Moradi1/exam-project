@@ -5,19 +5,36 @@ import {
   ListIcon,
   ShieldIcon
 } from "@/components/icons";
+import Link from "next/link";
 
 interface WelcomeScreenProps {
   onStart: () => void;
+  exam?: {
+    title: string;
+    description: string;
+    questionCount: number;
+    durationMinutes: number;
+    courseRange?: string;
+  };
+  startDisabled?: boolean;
+  cooldownMessage?: string;
+  showCssEntry?: boolean;
 }
 
-const instructions = [
-  "آزمون شامل ۳۰ پرسش در چهار قالب متفاوت است.",
-  "پس از شروع، ۳۵ دقیقه فرصت دارید و زمان با بستن صفحه هم ادامه پیدا می‌کند.",
-  "پس از ثبت نهایی، نتیجه و پاسخ‌نامهٔ تشریحی نمایش داده می‌شود.",
-  "برای هر پرسش تنها یک پاسخ در نظر گرفته شده است."
-];
+const defaultExam = {
+  title: "HTML",
+  description: "با یک آزمون جامع و کاربردی، دانسته‌هایت دربارهٔ ساختار صفحات وب، عناصر معنایی، فرم‌ها و رسانه‌ها را محک بزن.",
+  questionCount: 30,
+  durationMinutes: 35
+};
 
-export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
+export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = false, cooldownMessage, showCssEntry = false }: WelcomeScreenProps) {
+  const instructions = [
+    `آزمون شامل ${exam.questionCount.toLocaleString("fa-IR")} پرسش در چهار قالب متفاوت است.`,
+    `پس از شروع، ${exam.durationMinutes.toLocaleString("fa-IR")} دقیقه فرصت دارید و زمان با بستن صفحه هم ادامه پیدا می‌کند.`,
+    "پس از ثبت نهایی، نتیجه و پاسخ‌نامهٔ تشریحی نمایش داده می‌شود.",
+    "برای هر پرسش تنها یک پاسخ در نظر گرفته شده است."
+  ];
   return (
     <main className="welcome page-shell">
       <section className="welcome__hero" aria-labelledby="welcome-title">
@@ -27,21 +44,20 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
         </div>
         <h1 id="welcome-title">
           یک قدم تا تسلط بیشتر بر
-          <span> HTML</span>
+          <span> {exam.title}</span>
         </h1>
         <p>
-          با یک آزمون جامع و کاربردی، دانسته‌هایت دربارهٔ ساختار صفحات وب،
-          عناصر معنایی، فرم‌ها و رسانه‌ها را محک بزن.
+          {exam.description}
         </p>
 
         <div className="exam-facts" aria-label="مشخصات آزمون">
           <div>
             <ListIcon />
-            <span><strong>۳۰ پرسش</strong><small>چهار نوع سؤال</small></span>
+            <span><strong>{exam.questionCount.toLocaleString("fa-IR")} پرسش</strong><small>چهار نوع سؤال</small></span>
           </div>
           <div>
             <ClockIcon />
-            <span><strong>۳۵ دقیقه</strong><small>زمان ثابت آزمون</small></span>
+            <span><strong>{exam.durationMinutes.toLocaleString("fa-IR")} دقیقه</strong><small>زمان ثابت آزمون</small></span>
           </div>
           <div>
             <ShieldIcon />
@@ -49,15 +65,17 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           </div>
         </div>
 
-        <button className="primary-button primary-button--large" type="button" onClick={onStart}>
+        {exam.courseRange && <p className="course-range">{exam.courseRange}</p>}
+        <button className="primary-button primary-button--large" type="button" onClick={onStart} disabled={startDisabled}>
           شروع آزمون
           <ArrowIcon />
         </button>
-        <p className="start-note">با شروع آزمون، زمان و پاسخ‌ها در همین مرورگر ذخیره می‌شوند و زمان قابل شروع مجدد نیست.</p>
+        <p className="start-note">{cooldownMessage ?? "با شروع آزمون، زمان و پاسخ‌ها در همین مرورگر ذخیره می‌شوند و زمان قابل شروع مجدد نیست."}</p>
+        {showCssEntry && <Link className="secondary-button css-entry-button" href="/css">ورود به آزمون‌های CSS</Link>}
       </section>
 
       <aside className="instruction-card" aria-labelledby="instructions-title">
-        <span className="instruction-card__number">۳۰</span>
+        <span className="instruction-card__number">{exam.questionCount.toLocaleString("fa-IR")}</span>
         <div className="instruction-card__top">
           <span className="instruction-card__icon"><ListIcon /></span>
           <div>
@@ -81,7 +99,7 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
             <i className="mix-choice" />
             <i className="mix-boolean" />
           </div>
-          <p>۳ تشریحی · ۱۰ کشویی · ۱۲ چهارگزینه‌ای · ۵ درست/نادرست</p>
+          <p>{exam.questionCount === 40 ? "۵ تشریحی · ۱۰ کشویی · ۱۵ چهارگزینه‌ای · ۱۰ درست/نادرست" : "۳ تشریحی · ۱۰ کشویی · ۱۲ چهارگزینه‌ای · ۵ درست/نادرست"}</p>
         </div>
       </aside>
     </main>

@@ -4,6 +4,8 @@ import { GET, POST } from "@/app/api/submit/route";
 import { gradeSubmission, normalizeDescriptiveAnswer } from "@/lib/grading.server";
 import { answerKey } from "@/lib/questions/private.server";
 import { publicQuestions } from "@/lib/questions/public";
+import { cssPart1Questions, cssPart2Questions } from "@/lib/questions/css.public";
+import { cssPart1AnswerKey, cssPart2AnswerKey } from "@/lib/questions/css.private.server";
 import { validateSubmission } from "@/lib/validation";
 import type { SubmittedAnswer } from "@/types/exam";
 
@@ -69,6 +71,47 @@ describe("ساختار آزمون", () => {
     expect(serialized).not.toMatch(
       /acceptedAnswers|correctAnswer|answerKey|"answer"|"difficulty"/i
     );
+  });
+});
+
+describe("آزمون‌های CSS", () => {
+  it("هر دو بخش دقیقاً ۴۰ پرسش با ترکیب خواسته‌شده دارند", () => {
+    for (const questions of [cssPart1Questions, cssPart2Questions]) {
+      expect(questions).toHaveLength(40);
+      const counts = questions.reduce<Record<string, number>>(
+        (result, question) => ({ ...result, [question.type]: (result[question.type] ?? 0) + 1 }),
+        {}
+      );
+      expect(counts).toEqual({
+        descriptive: 5,
+        dropdown: 10,
+        "multiple-choice": 15,
+        "true-false": 10
+      });
+    }
+  });
+
+  it("پاسخ‌نامهٔ CSS در دادهٔ عمومی منتشر نمی‌شود", () => {
+    expect(JSON.stringify(cssPart1Questions)).not.toMatch(/acceptedAnswers|correctAnswer|answerKey|"answer"/i);
+    expect(Object.keys(cssPart1AnswerKey)).toHaveLength(40);
+  });
+
+  it("API فقط پاسخ‌های بخش CSS انتخاب‌شده را تصحیح می‌کند", async () => {
+    for (const [examId, questions, keys] of [
+      ["css-part-1", cssPart1Questions, cssPart1AnswerKey],
+      ["css-part-2", cssPart2Questions, cssPart2AnswerKey]
+    ] as const) {
+      const answers = questions.map(({ id }) => ({ id, value: keys[id].answer }));
+      const response = await POST(new Request("http://localhost/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ examId, answers })
+      }));
+      expect(response.status).toBe(200);
+      const payload = await response.json();
+      expect(payload).toMatchObject({ total: 40, correct: 40, percentage: 100 });
+      expect(JSON.stringify(payload)).not.toMatch(/acceptedAnswers|answerKey/i);
+    }
   });
 });
 

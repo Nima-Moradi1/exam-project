@@ -589,6 +589,135 @@ button:not(:disabled) {
   text-align: left;
 }
 
+.exam-abandon {
+  display: flex;
+  justify-content: flex-end;
+  margin: -14px 0 18px;
+}
+
+.abandon-button {
+  min-height: 40px;
+  padding: 8px 14px;
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 38%, var(--line));
+  border-radius: 11px;
+  background: var(--red-soft);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.abandon-button:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--red);
+  background: var(--red);
+}
+
+.course-range {
+  display: inline-block;
+  margin: 18px 0 0;
+  padding: 6px 11px;
+  color: var(--green);
+  border-radius: 20px;
+  background: var(--green-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.css-entry-button {
+  margin-inline-start: 10px;
+  text-decoration: none;
+}
+
+.css-landing {
+  min-height: calc(100vh - 172px);
+  padding-block: 70px;
+}
+
+.css-landing__hero {
+  max-width: 700px;
+  margin: 0 auto 42px;
+  text-align: center;
+}
+
+.css-landing__hero h1 {
+  margin: 14px 0;
+  font-size: clamp(2.4rem, 5vw, 4.3rem);
+  line-height: 1.2;
+}
+
+.css-landing__hero h1 span {
+  direction: ltr;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.css-landing__hero p {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 2;
+}
+
+.css-exam-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  max-width: 940px;
+  margin: auto;
+}
+
+.css-exam-card {
+  padding: clamp(25px, 4vw, 38px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.css-exam-card > span {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.css-exam-card h2 {
+  margin: 7px 0;
+  font-size: 1.35rem;
+}
+
+.css-exam-card p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.css-exam-card ul {
+  display: grid;
+  gap: 7px;
+  margin: 22px 0;
+  padding: 0;
+  color: var(--text-soft);
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.css-exam-card li::before {
+  content: "✓";
+  margin-inline-end: 8px;
+  color: var(--green);
+  font-weight: 900;
+}
+
+.css-exam-card .primary-button {
+  text-decoration: none;
+}
+
+.cooldown-note {
+  padding: 10px;
+  color: var(--red) !important;
+  border-radius: 10px;
+  background: var(--red-soft);
+  font-size: 0.75rem;
+}
+
 .exam-timer {
   display: flex;
   align-items: center;
@@ -1506,6 +1635,20 @@ button:not(:disabled) {
   .exam-top {
     grid-template-columns: 1fr auto auto;
     gap: 10px;
+  }
+
+  .css-entry-button {
+    width: 100%;
+    margin: 10px 0 0;
+  }
+
+  .css-landing {
+    min-height: calc(100vh - 148px);
+    padding-block: 42px;
+  }
+
+  .css-exam-grid {
+    grid-template-columns: 1fr;
   }
 
   .exam-top .progress-track {

@@ -6,8 +6,8 @@ import { ExamHeader } from "@/components/exam-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "آزمون جامع HTML | سنجش دانش وب",
-  description: "آزمون فارسی و تعاملی HTML با ارزیابی امن سمت سرور",
+  title: "آزمون‌های HTML و CSS | سنجش دانش وب",
+  description: "آزمون‌های فارسی و تعاملی HTML و CSS با ارزیابی امن سمت سرور",
   robots: {
     index: false,
     follow: false
@@ -46,7 +46,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         {children}
         <footer className="site-footer">
           <div className="page-shell">
-            <p>طراحی‌شده برای یادگیری عمیق‌تر HTML</p>
+            <p>طراحی‌شده برای یادگیری عمیق‌تر HTML و CSS</p>
             <span>پاسخ‌ها تنها هنگام ثبت نهایی ارزیابی می‌شوند.</span>
           </div>
         </footer>

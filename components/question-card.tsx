@@ -5,8 +5,10 @@ import type { AnswerValue, PublicQuestion } from "@/types/exam";
 interface QuestionCardProps {
   question: PublicQuestion;
   number: number;
+  total: number;
   value: AnswerValue;
   onChange: (value: AnswerValue) => void;
+  disabled?: boolean;
 }
 
 const typeLabels: Record<PublicQuestion["type"], string> = {
@@ -19,15 +21,17 @@ const typeLabels: Record<PublicQuestion["type"], string> = {
 export function QuestionCard({
   question,
   number,
+  total,
   value,
-  onChange
+  onChange,
+  disabled = false
 }: QuestionCardProps) {
   const inputName = `answer-${question.id}`;
 
   return (
     <article className="question-card" aria-labelledby={`question-${question.id}`}>
       <div className="question-card__meta">
-        <span>پرسش {number} از ۳۰</span>
+        <span>پرسش {number.toLocaleString("fa-IR")} از {total.toLocaleString("fa-IR")}</span>
         <span>{typeLabels[question.type]}</span>
       </div>
       <h2 id={`question-${question.id}`}>{question.text}</h2>
@@ -45,6 +49,7 @@ export function QuestionCard({
             value={typeof value === "string" ? value : ""}
             placeholder={question.placeholder}
             onChange={(event) => onChange(event.target.value)}
+            disabled={disabled}
           />
           <small>یک پاسخ کوتاه و دقیق بنویسید.</small>
         </div>
@@ -59,6 +64,7 @@ export function QuestionCard({
               name={inputName}
               value={typeof value === "string" ? value : ""}
               onChange={(event) => onChange(event.target.value)}
+              disabled={disabled}
             >
               <option value="">یک گزینه را انتخاب کنید…</option>
               {question.choices?.map((choice) => (
@@ -87,6 +93,7 @@ export function QuestionCard({
                   value={choice.id}
                   checked={selected}
                   onChange={() => onChange(choiceValue)}
+                  disabled={disabled}
                 />
                 <span className="choice-item__marker" aria-hidden="true">
                   {question.type === "true-false"

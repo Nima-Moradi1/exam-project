@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { publicQuestions } from "@/lib/questions/public";
-import type { SubmittedAnswer } from "@/types/exam";
+import type { PublicQuestion, SubmittedAnswer } from "@/types/exam";
 
 const answerSchema = z
   .object({
@@ -16,7 +16,8 @@ const answerSchema = z
 
 const submissionSchema = z
   .object({
-    answers: z.array(answerSchema).length(publicQuestions.length),
+    examId: z.string().min(1).max(32).optional(),
+    answers: z.array(answerSchema).min(1).max(100),
     warningCount: z.number().int().min(0).max(10_000).optional()
   })
   .strict();
@@ -26,7 +27,7 @@ export type ValidSubmission = {
   warningCount?: number;
 };
 
-export function validateSubmission(input: unknown):
+export function validateSubmission(input: unknown, questions: readonly PublicQuestion[] = publicQuestions):
   | { success: true; data: ValidSubmission }
   | { success: false; message: string } {
   const parsed = submissionSchema.safeParse(input);
@@ -39,12 +40,16 @@ export function validateSubmission(input: unknown):
     return { success: false, message: "شناسهٔ تکراری در پاسخ‌ها پذیرفته نیست." };
   }
 
-  const questionsById = new Map(publicQuestions.map((question) => [question.id, question]));
+  if (parsed.data.answers.length !== questions.length) {
+    return { success: false, message: "تعداد پاسخ‌های ارسالی با آزمون هم‌خوانی ندارد." };
+  }
+
+  const questionsById = new Map(questions.map((question) => [question.id, question]));
   if (ids.some((id) => !questionsById.has(id))) {
     return { success: false, message: "یک یا چند شناسهٔ پرسش ناشناخته است." };
   }
 
-  if (publicQuestions.some((question) => !ids.includes(question.id))) {
+  if (questions.some((question) => !ids.includes(question.id))) {
     return { success: false, message: "پاسخ همهٔ پرسش‌ها باید ارسال شود؛ برای بی‌پاسخ مقدار خالی بفرستید." };
   }
 
