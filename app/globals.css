@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "IRANYekanX";
+  src: url("/fonts/iranyekanx/IRANYekanX-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IRANYekanX";
+  src: url("/fonts/iranyekanx/IRANYekanX-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IRANYekanX";
+  src: url("/fonts/iranyekanx/IRANYekanX-DemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IRANYekanX";
+  src: url("/fonts/iranyekanx/IRANYekanX-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --bg: #f8f5ef;
   --surface: #fffdf9;
@@ -70,7 +102,7 @@ body {
     radial-gradient(circle at 90% 15%, color-mix(in srgb, var(--green) 7%, transparent), transparent 26rem),
     var(--bg);
   color: var(--text);
-  font-family: Vazirmatn, IRANSans, "Segoe UI", Tahoma, Arial, sans-serif;
+  font-family: "IRANYekanX", Vazirmatn, IRANSans, "Segoe UI", Tahoma, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
@@ -138,6 +170,29 @@ button:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  margin-inline-end: 18px;
+}
+
+.site-nav a {
+  padding: 8px 11px;
+  color: var(--text-soft);
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.site-nav a:hover {
+  color: var(--green);
+  background: var(--green-soft);
 }
 
 .brand {
@@ -1480,6 +1535,217 @@ button:not(:disabled) {
 .status--incorrect { color: var(--red); background: var(--red-soft); }
 .status--unanswered { color: var(--amber); background: var(--amber-soft); }
 
+/* Exam hub */
+.exam-hub {
+  min-height: calc(100vh - 172px);
+  padding: clamp(50px, 7vw, 92px) 0 78px;
+}
+
+.hub-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.72fr);
+  align-items: center;
+  gap: clamp(42px, 9vw, 130px);
+}
+
+.hub-hero__content {
+  max-width: 650px;
+}
+
+.hub-hero h1 {
+  max-width: 620px;
+  margin: 18px 0;
+  font-size: clamp(2.25rem, 4.25vw, 3.85rem);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+
+.hub-hero h1 span {
+  color: var(--accent);
+}
+
+.hub-hero__content > p {
+  max-width: 590px;
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 2.1;
+}
+
+.hub-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin-top: 30px;
+}
+
+.hub-hero__actions .primary-button {
+  text-decoration: none;
+}
+
+.hub-text-link {
+  padding: 10px 4px;
+  color: var(--green);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.hub-text-link:hover {
+  color: var(--accent);
+}
+
+.hub-summary {
+  position: relative;
+  overflow: hidden;
+  min-height: 285px;
+  padding: 30px;
+  color: #f7fbf8;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #254f3f, #17352a);
+  box-shadow: 0 24px 56px rgb(30 72 54 / 0.22);
+}
+
+.hub-summary::after {
+  content: "✓";
+  position: absolute;
+  left: -24px;
+  bottom: -75px;
+  color: rgb(255 255 255 / 0.07);
+  font: 900 15rem/1 IRANYekanX, sans-serif;
+}
+
+.hub-summary__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hub-summary__top > span {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  color: #315e4b;
+  border-radius: 11px;
+  background: #e7f4ec;
+}
+
+.hub-summary__top svg { width: 20px; height: 20px; }
+.hub-summary__top p { margin: 0; color: rgb(255 255 255 / 0.65); font-size: 0.72rem; }
+
+.hub-summary > strong {
+  display: block;
+  max-width: 260px;
+  margin: 28px 0;
+  font-size: 1.55rem;
+  line-height: 1.6;
+}
+
+.hub-summary__stats {
+  display: flex;
+  gap: 13px;
+}
+
+.hub-summary__stats span {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  color: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 0.06);
+  font-size: 0.66rem;
+}
+
+.hub-summary__stats b { color: #fff; font-size: 1rem; }
+.hub-summary__line { margin-top: 25px; color: #c0ddcd; font-size: 0.72rem; }
+.hub-summary__line i { width: 7px; height: 7px; display: inline-block; margin-inline-end: 7px; border-radius: 50%; background: #89d4a8; box-shadow: 0 0 0 4px rgb(137 212 168 / 0.13); }
+
+.hub-features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: clamp(58px, 8vw, 100px);
+}
+
+.hub-features article {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+}
+
+.hub-features article > span {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--green);
+  border-radius: 10px;
+  background: var(--green-soft);
+}
+
+.hub-features svg { width: 18px; height: 18px; }
+.hub-features strong { display: block; font-size: 0.8rem; }
+.hub-features p { margin: 2px 0 0; color: var(--muted); font-size: 0.68rem; line-height: 1.7; }
+
+.hub-exams { margin-top: clamp(66px, 9vw, 120px); }
+
+.hub-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 26px;
+}
+
+.hub-section-heading h2 { margin: 8px 0 0; font-size: clamp(1.4rem, 2.3vw, 2rem); }
+.hub-section-heading > p { max-width: 270px; margin: 0; color: var(--muted); font-size: 0.74rem; line-height: 1.9; }
+
+.hub-exam-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.hub-exam-card {
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(24px, 4vw, 34px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.hub-exam-card--html { border-top: 4px solid var(--accent); }
+.hub-exam-card--css { border-top: 4px solid var(--green); }
+.hub-exam-card__label { color: var(--muted); font-size: 0.7rem; font-weight: 700; }
+.hub-exam-card h3 { margin: 10px 0 9px; font-size: 1.35rem; }
+.hub-exam-card > p { max-width: 430px; margin: 0; color: var(--text-soft); font-size: 0.84rem; line-height: 1.95; }
+
+.hub-exam-card > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+
+.hub-exam-card > div > span { color: var(--green); font-size: 0.69rem; font-weight: 700; }
+.hub-exam-card > div a { display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; color: var(--text); border-radius: 9px; background: var(--surface-soft); font-size: 0.72rem; font-weight: 800; text-decoration: none; }
+.hub-exam-card > div a:hover { color: #fff; background: var(--accent); }
+.hub-exam-card > div svg { width: 16px; height: 16px; }
+
 @keyframes card-in {
   from { opacity: 0; transform: translateY(8px); }
 }
@@ -1501,6 +1767,15 @@ button:not(:disabled) {
 }
 
 @media (max-width: 920px) {
+  .hub-hero {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  .hub-summary { max-width: 620px; }
+
+  .hub-features { grid-template-columns: 1fr; }
+
   .welcome {
     grid-template-columns: 1fr;
     gap: 45px;
@@ -1569,6 +1844,27 @@ button:not(:disabled) {
   .brand small {
     display: none;
   }
+
+  .site-nav {
+    display: none;
+  }
+
+  .exam-hub {
+    min-height: calc(100vh - 148px);
+    padding-block: 40px 54px;
+  }
+
+  .hub-hero h1 { font-size: clamp(2rem, 10vw, 2.7rem); }
+  .hub-hero__content > p { font-size: 0.9rem; }
+  .hub-hero__actions { align-items: stretch; flex-direction: column; }
+  .hub-hero__actions .primary-button { width: 100%; }
+  .hub-summary { min-height: 260px; padding: 24px; }
+  .hub-features { margin-top: 48px; gap: 10px; }
+  .hub-features article { padding: 15px; }
+  .hub-section-heading { display: block; margin-bottom: 20px; }
+  .hub-section-heading > p { margin-top: 7px; }
+  .hub-exams { margin-top: 62px; }
+  .hub-exam-grid { grid-template-columns: 1fr; }
 
   .welcome,
   .exam-page,
