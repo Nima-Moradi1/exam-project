@@ -3,13 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { SyllabusDialog } from "@/components/syllabus-dialog";
+import { cssPart1Syllabus, cssPart2Syllabus, type ExamSyllabus } from "@/lib/exam-syllabi";
+
 const exams = [
-  { id: "css-part-1", href: "/css/part-1", title: "آزمون CSS — بخش ۱", range: "بخش‌های ۱ تا ۶ دورهٔ روکت", key: "css-part-1-cooldown-until" },
-  { id: "css-part-2", href: "/css/part-2", title: "آزمون CSS — بخش ۲", range: "بخش‌های ۷ تا ۱۲ دورهٔ روکت", key: "css-part-2-cooldown-until" }
+  { id: "css-part-1", href: "/css/part-1", title: "آزمون CSS — بخش ۱", key: "css-part-1-cooldown-until", syllabus: cssPart1Syllabus },
+  { id: "css-part-2", href: "/css/part-2", title: "آزمون CSS — بخش ۲", key: "css-part-2-cooldown-until", syllabus: cssPart2Syllabus }
 ] as const;
 
 export default function CssLandingPage() {
   const [locked, setLocked] = useState<Record<string, number>>({});
+  const [selectedSyllabus, setSelectedSyllabus] = useState<ExamSyllabus | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -37,7 +41,7 @@ export default function CssLandingPage() {
             <article className="css-exam-card" key={exam.id}>
               <span>بخش {(index + 1).toLocaleString("fa-IR")}</span>
               <h2>{exam.title}</h2>
-              <p>{exam.range}</p>
+              <button className="syllabus-link" type="button" onClick={() => setSelectedSyllabus(exam.syllabus)}>مشاهده سرفصل‌های آزمون</button>
               <ul>
                 <li>۴۰ پرسش در چهار قالب</li>
                 <li>۴۵ دقیقه زمان غیرقابل‌توقف</li>
@@ -48,6 +52,7 @@ export default function CssLandingPage() {
           );
         })}
       </section>
+      {selectedSyllabus && <SyllabusDialog syllabus={selectedSyllabus} onClose={() => setSelectedSyllabus(null)} />}
     </main>
   );
 }

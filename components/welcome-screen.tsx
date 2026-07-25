@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import {
   ArrowIcon,
   CheckIcon,
@@ -6,6 +10,8 @@ import {
   ShieldIcon
 } from "@/components/icons";
 import Link from "next/link";
+import { SyllabusDialog } from "@/components/syllabus-dialog";
+import type { ExamSyllabus } from "@/lib/exam-syllabi";
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -14,7 +20,7 @@ interface WelcomeScreenProps {
     description: string;
     questionCount: number;
     durationMinutes: number;
-    courseRange?: string;
+    syllabus?: ExamSyllabus;
   };
   startDisabled?: boolean;
   cooldownMessage?: string;
@@ -29,6 +35,7 @@ const defaultExam = {
 };
 
 export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = false, cooldownMessage, showCssEntry = false }: WelcomeScreenProps) {
+  const [showSyllabus, setShowSyllabus] = useState(false);
   const instructions = [
     `آزمون شامل ${exam.questionCount.toLocaleString("fa-IR")} پرسش در چهار قالب متفاوت است.`,
     `پس از شروع، ${exam.durationMinutes.toLocaleString("fa-IR")} دقیقه فرصت دارید و زمان با بستن صفحه هم ادامه پیدا می‌کند.`,
@@ -65,7 +72,7 @@ export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = fal
           </div>
         </div>
 
-        {exam.courseRange && <p className="course-range">{exam.courseRange}</p>}
+        {exam.syllabus && <button className="syllabus-link" type="button" onClick={() => setShowSyllabus(true)}>مشاهده سرفصل‌های آزمون</button>}
         <button className="primary-button primary-button--large" type="button" onClick={onStart} disabled={startDisabled}>
           شروع آزمون
           <ArrowIcon />
@@ -102,6 +109,7 @@ export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = fal
           <p>{exam.questionCount === 40 ? "۵ تشریحی · ۱۰ کشویی · ۱۵ چهارگزینه‌ای · ۱۰ درست/نادرست" : "۳ تشریحی · ۱۰ کشویی · ۱۲ چهارگزینه‌ای · ۵ درست/نادرست"}</p>
         </div>
       </aside>
+      {showSyllabus && exam.syllabus && <SyllabusDialog syllabus={exam.syllabus} onClose={() => setShowSyllabus(false)} />}
     </main>
   );
 }

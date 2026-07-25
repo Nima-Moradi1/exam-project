@@ -105,3 +105,43 @@ export function RefreshIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function GithubIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M15 22v-3.9c.04-1-.33-1.97-1.04-2.68 3.42-.38 7.02-1.68 7.02-7.56a5.9 5.9 0 0 0-1.56-4.1A5.47 5.47 0 0 0 19.27.9S18 0 15 1.95a14.67 14.67 0 0 0-6 0C6 0 4.73.9 4.73.9a5.47 5.47 0 0 0-.15 2.86A5.9 5.9 0 0 0 3.02 7.9c0 5.87 3.59 7.17 7.01 7.55A3.77 3.77 0 0 0 9 18.36V22" />
+      <path d="M9 19c-3 .9-3-1.5-4.2-1.8" />
+    </svg>
+  );
+}
+
+export function LinkedinIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6Z" />
+      <rect width="4" height="12" x="2" y="9" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  );
+}
+
+export function TelegramIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}>
+      <path d="m22 3-7.2 18-4.15-7.15L3.5 10.5 22 3Z" />
+      <path d="m10.65 13.85 3.2-3.05" />
+    </svg>
+  );
+}
+
+export function MailIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m3 6 9 7 9-7" /></svg>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <svg {...base} {...props}><path d="M22 16.9v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.64-3.08 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.14 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.72c.12.9.34 1.78.65 2.63a2 2 0 0 1-.45 2.11L8.03 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.31 1.73.53 2.63.65A2 2 0 0 1 22 16.9Z" /></svg>
+  );
+}

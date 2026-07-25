@@ -6,6 +6,7 @@ import { AlertIcon, ArrowIcon, ClockIcon, FlagIcon } from "@/components/icons";
 import { QuestionCard } from "@/components/question-card";
 import { ResultsScreen } from "@/components/results-screen";
 import { WelcomeScreen } from "@/components/welcome-screen";
+import { htmlSyllabus, type ExamSyllabus } from "@/lib/exam-syllabi";
 import type {
   AnswerValue,
   GradeResult,
@@ -34,7 +35,7 @@ interface ExamAppProps {
 export interface ExamConfig {
   title: string;
   description: string;
-  courseRange?: string;
+  syllabus?: ExamSyllabus;
   durationMinutes: number;
   storageKey: string;
   apiExamId?: "css-part-1" | "css-part-2";
@@ -44,6 +45,7 @@ export interface ExamConfig {
 const DEFAULT_CONFIG: ExamConfig = {
   title: "HTML",
   description: "با یک آزمون جامع و کاربردی، دانسته‌هایت دربارهٔ ساختار صفحات وب، عناصر معنایی، فرم‌ها و رسانه‌ها را محک بزن.",
+  syllabus: htmlSyllabus,
   durationMinutes: 35,
   storageKey: "html-exam-attempt-v2",
   abandon: { cooldownKey: "html-exam-cooldown-until", returnTo: "/" }
@@ -352,7 +354,7 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
     <WelcomeScreen
       onStart={startExam}
       showCssEntry={!config.apiExamId}
-      exam={{ title: config.title, description: config.description, questionCount: questions.length, durationMinutes: config.durationMinutes, courseRange: config.courseRange }}
+      exam={{ title: config.title, description: config.description, questionCount: questions.length, durationMinutes: config.durationMinutes, syllabus: config.syllabus }}
       startDisabled={cooldownUntil !== null}
       cooldownMessage={cooldownUntil ? `پس از انصراف، امکان شرکت دوباره از ${new Date(cooldownUntil).toLocaleString("fa-IR")} فراهم می‌شود.` : undefined}
     />
