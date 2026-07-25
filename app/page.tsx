@@ -1,6 +1,5 @@
-import { ExamApp } from "@/components/exam-app";
-import { publicQuestions } from "@/lib/questions/public";
+import { ExamHub } from "@/components/exam-hub";
 
 export default function HomePage() {
-  return <ExamApp questions={publicQuestions} />;
+  return <ExamHub />;
 }

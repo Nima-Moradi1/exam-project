@@ -7,15 +7,21 @@ export function ExamHeader() {
   return (
     <header className="site-header">
       <div className="page-shell site-header__inner">
-        <Link className="brand" href="/" aria-label="آزمون HTML؛ صفحهٔ اصلی">
+        <Link className="brand" href="/" aria-label="آزمون‌خانه؛ صفحهٔ اصلی">
           <span className="brand__mark">
             <CodeIcon />
           </span>
           <span>
-            <strong>آزمون HTML</strong>
-            <small>سنجش دانش، قدم‌به‌قدم</small>
+            <strong>آزمون‌خانه</strong>
+            <small>سنجش هدفمند مهارت‌های وب</small>
           </span>
         </Link>
+        <nav className="site-nav" aria-label="ناوبری اصلی">
+          <Link href="/">خانه</Link>
+          <Link href="/#exams">آزمون‌ها</Link>
+          <Link href="/html">HTML</Link>
+          <Link href="/css">CSS</Link>
+        </nav>
         <ThemeToggle />
       </div>
     </header>
