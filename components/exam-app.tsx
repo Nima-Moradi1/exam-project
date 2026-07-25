@@ -96,7 +96,6 @@ export function ExamApp({ questions }: ExamAppProps) {
   const [result, setResult] = useState<GradeResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -110,7 +109,6 @@ export function ExamApp({ questions }: ExamAppProps) {
         setWarningCount(stored.warningCount);
         setResult(stored.result ?? null);
       }
-      setHydrated(true);
     });
     return () => {
       active = false;
@@ -118,7 +116,7 @@ export function ExamApp({ questions }: ExamAppProps) {
   }, [questions]);
 
   useEffect(() => {
-    if (!hydrated || phase === "welcome") return;
+    if (phase === "welcome") return;
     const stored: StoredAttempt = {
       version: 1,
       phase,
@@ -128,7 +126,7 @@ export function ExamApp({ questions }: ExamAppProps) {
       ...(result ? { result } : {})
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-  }, [answers, currentIndex, hydrated, phase, result, warningCount]);
+  }, [answers, currentIndex, phase, result, warningCount]);
 
   const warn = useCallback(() => {
     setWarningCount((count) => count + 1);
@@ -231,15 +229,6 @@ export function ExamApp({ questions }: ExamAppProps) {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (!hydrated) {
-    return (
-      <main className="loading-screen page-shell" aria-live="polite">
-        <span className="spinner" />
-        <p>در حال آماده‌سازی آزمون…</p>
-      </main>
-    );
   }
 
   if (questions.length === 0) {

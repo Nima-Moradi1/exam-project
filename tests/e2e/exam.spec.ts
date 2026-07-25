@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.clear();
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("e2e-attempt-ready")) {
+      localStorage.clear();
+      sessionStorage.setItem("e2e-attempt-ready", "true");
+    }
   });
-  await page.reload();
+  await page.goto("/");
 });
 
 test("شروع آزمون و پیمایش قبلی و بعدی", async ({ page }) => {
@@ -35,7 +37,7 @@ test("پاسخ‌دادن به هر چهار نوع پرسش", async ({ page }) 
   await expect(page.getByRole("button", { name: /پرسش ۱۴، پاسخ‌داده‌شده/ })).toBeVisible();
 
   await page.getByRole("button", { name: /پرسش ۲۶، بی‌پاسخ/ }).click();
-  await page.getByLabel("درست").check();
+  await page.getByRole("radio", { name: "درست", exact: true }).check();
   await expect(page.getByRole("button", { name: /پرسش ۲۶، پاسخ‌داده‌شده/ })).toBeVisible();
 });
 
