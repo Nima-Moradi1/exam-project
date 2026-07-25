@@ -1,11 +1,10 @@
 "use client";
 
-import { CheckIcon, RefreshIcon } from "@/components/icons";
+import { CheckIcon } from "@/components/icons";
 import type { GradeResult } from "@/types/exam";
 
 interface ResultsScreenProps {
   result: GradeResult;
-  onRestart: () => void;
 }
 
 const statusLabel = {
@@ -14,7 +13,7 @@ const statusLabel = {
   unanswered: "بی‌پاسخ"
 };
 
-export function ResultsScreen({ result, onRestart }: ResultsScreenProps) {
+export function ResultsScreen({ result }: ResultsScreenProps) {
   const circumference = 2 * Math.PI * 54;
   const dashOffset = circumference * (1 - result.percentage / 100);
 
@@ -39,10 +38,6 @@ export function ResultsScreen({ result, onRestart }: ResultsScreenProps) {
           <h1 id="result-title">نتیجهٔ آزمون HTML</h1>
           <p>{result.message}</p>
         </div>
-        <button className="secondary-button" type="button" onClick={onRestart}>
-          <RefreshIcon />
-          شروع آزمون تازه
-        </button>
       </section>
 
       <section className="stat-grid" aria-label="خلاصهٔ نتیجه">
