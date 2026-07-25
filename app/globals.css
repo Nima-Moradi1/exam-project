@@ -710,7 +710,7 @@ button:not(:disabled) {
 .syllabus-link {
   display: block;
   width: fit-content;
-  margin: 18px 0 0;
+  margin: 18px 0 14px;
   padding: 0;
   color: var(--green);
   border: 0;
@@ -723,7 +723,7 @@ button:not(:disabled) {
 .syllabus-link:hover { color: var(--accent); }
 
 .css-entry-button {
-  margin-inline-start: 10px;
+  margin: 20px 0 0;
   text-decoration: none;
 }
 
@@ -2041,7 +2041,7 @@ button:not(:disabled) {
 
   .css-entry-button {
     width: 100%;
-    margin: 10px 0 0;
+    margin: 16px 0 0;
   }
 
   .css-landing {
