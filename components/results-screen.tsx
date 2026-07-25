@@ -5,6 +5,7 @@ import type { GradeResult } from "@/types/exam";
 
 interface ResultsScreenProps {
   result: GradeResult;
+  examTitle?: string;
 }
 
 const statusLabel = {
@@ -13,7 +14,7 @@ const statusLabel = {
   unanswered: "بی‌پاسخ"
 };
 
-export function ResultsScreen({ result }: ResultsScreenProps) {
+export function ResultsScreen({ result, examTitle = "HTML" }: ResultsScreenProps) {
   const circumference = 2 * Math.PI * 54;
   const dashOffset = circumference * (1 - result.percentage / 100);
 
@@ -35,14 +36,14 @@ export function ResultsScreen({ result }: ResultsScreenProps) {
         </div>
         <div>
           <span className="eyebrow"><i /> آزمون با موفقیت ثبت شد</span>
-          <h1 id="result-title">نتیجهٔ آزمون HTML</h1>
+          <h1 id="result-title">نتیجهٔ آزمون {examTitle}</h1>
           <p>{result.message}</p>
         </div>
       </section>
 
       <section className="stat-grid" aria-label="خلاصهٔ نتیجه">
         <article>
-          <span className="stat-icon stat-icon--total">۳۰</span>
+          <span className="stat-icon stat-icon--total">{result.total.toLocaleString("fa-IR")}</span>
           <p>کل پرسش‌ها</p>
           <strong>{result.total.toLocaleString("fa-IR")}</strong>
         </article>
