@@ -147,21 +147,16 @@ async function seedUsers() {
 }
 
 async function main() {
-  const rootDb = db;
-  await rootDb.transaction(async (transaction) => {
-    db = transaction as unknown as typeof db;
-    const categoryMap = await seedCategories();
-    const htmlCategoryId = categoryMap.get("root:software-engineering:frontend:html");
-    const cssCategoryId = categoryMap.get("root:software-engineering:frontend:css");
-    if (!htmlCategoryId || !cssCategoryId) throw new Error("Legacy seed categories are missing.");
-    await ensureLegacyExam({ slug: "html-foundations-fa", title: "آزمون جامع HTML", description: "آزمون فارسی مبانی HTML، عناصر معنایی، فرم‌ها و رسانه‌ها.", categoryId: htmlCategoryId, durationSeconds: 35 * 60, syllabus: htmlSyllabus.items, questions: publicQuestions, answers: answerKey });
-    await ensureLegacyExam({ slug: "css-part-1-fa", title: "آزمون CSS — بخش ۱", description: "آزمون فارسی انتخاب‌کننده‌ها، box model و استایل‌دهی پایه.", categoryId: cssCategoryId, durationSeconds: 45 * 60, syllabus: cssPart1Syllabus.items, questions: cssPart1Questions, answers: cssPart1AnswerKey });
-    await ensureLegacyExam({ slug: "css-part-2-fa", title: "آزمون CSS — بخش ۲", description: "آزمون فارسی چیدمان، واکنش‌گرایی، transform و animation.", categoryId: cssCategoryId, durationSeconds: 45 * 60, syllabus: cssPart2Syllabus.items, questions: cssPart2Questions, answers: cssPart2AnswerKey });
-    for (const sample of sampleExams) await seedSampleExam(categoryMap, sample);
-    await seedResources();
-    await seedUsers();
-  });
-  db = rootDb;
+  const categoryMap = await seedCategories();
+  const htmlCategoryId = categoryMap.get("root:software-engineering:frontend:html");
+  const cssCategoryId = categoryMap.get("root:software-engineering:frontend:css");
+  if (!htmlCategoryId || !cssCategoryId) throw new Error("Legacy seed categories are missing.");
+  await ensureLegacyExam({ slug: "html-foundations-fa", title: "آزمون جامع HTML", description: "آزمون فارسی مبانی HTML، عناصر معنایی، فرم‌ها و رسانه‌ها.", categoryId: htmlCategoryId, durationSeconds: 35 * 60, syllabus: htmlSyllabus.items, questions: publicQuestions, answers: answerKey });
+  await ensureLegacyExam({ slug: "css-part-1-fa", title: "آزمون CSS — بخش ۱", description: "آزمون فارسی انتخاب‌کننده‌ها، box model و استایل‌دهی پایه.", categoryId: cssCategoryId, durationSeconds: 45 * 60, syllabus: cssPart1Syllabus.items, questions: cssPart1Questions, answers: cssPart1AnswerKey });
+  await ensureLegacyExam({ slug: "css-part-2-fa", title: "آزمون CSS — بخش ۲", description: "آزمون فارسی چیدمان، واکنش‌گرایی، transform و animation.", categoryId: cssCategoryId, durationSeconds: 45 * 60, syllabus: cssPart2Syllabus.items, questions: cssPart2Questions, answers: cssPart2AnswerKey });
+  for (const sample of sampleExams) await seedSampleExam(categoryMap, sample);
+  await seedResources();
+  await seedUsers();
   console.info("Seed completed without duplicate records.");
 }
 
