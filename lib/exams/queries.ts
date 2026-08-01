@@ -18,7 +18,7 @@ export async function getPublicHomeDiscovery() {
   const db = getDb();
   const [rootCategories, publishedExams] = await Promise.all([
     db.select({ id: categories.id, name: categories.name, slug: categories.slug, description: categories.description, locale: categories.locale, direction: categories.direction }).from(categories).where(and(isNull(categories.parentId), eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder)).limit(6),
-    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(12)
+    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name, categorySlug: categories.slug }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(18)
   ]);
   return { rootCategories, publishedExams };
 }

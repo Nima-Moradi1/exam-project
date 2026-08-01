@@ -1,5 +1,6 @@
 import { ArrowIcon, ClockIcon, CodeIcon, ListIcon, ShieldIcon } from "@/components/icons";
 import { NavigationLink } from "@/components/navigation-link";
+import { getExamCardTheme } from "@/lib/exams/presentation";
 
 const fallbackExams = [
   {
@@ -8,7 +9,7 @@ const fallbackExams = [
     category: "مبانی ساخت صفحات وب",
     description: "ساختار سند، تگ‌های معنایی، فرم‌ها و رسانه‌ها را در یک آزمون کامل مرور کن.",
     detail: "۳۰ پرسش · ۳۵ دقیقه",
-    accent: "html"
+    accent: "coral"
   },
   {
     href: "/css",
@@ -16,11 +17,11 @@ const fallbackExams = [
     category: "طراحی و چیدمان رابط",
     description: "دو بخش کاربردی از انتخاب‌کننده‌ها تا چیدمان، رسپانسیو و انیمیشن پیش روی توست.",
     detail: "۲ بخش · هر بخش ۴۰ پرسش",
-    accent: "css"
+    accent: "mint"
   }
 ] as const;
 
-type DiscoveryExam = { slug: string; title: string; categoryName: string; shortDescription: string; durationSeconds: number; difficulty: string };
+type DiscoveryExam = { slug: string; title: string; categoryName: string; categorySlug: string; shortDescription: string; durationSeconds: number; difficulty: string };
 
 export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ name: string; slug: string; description: string | null }>; publishedExams: DiscoveryExam[] } }) {
   const exams = discovery?.publishedExams.map((exam) => ({
@@ -29,7 +30,7 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
     category: exam.categoryName,
     description: exam.shortDescription,
     detail: `${Math.ceil(exam.durationSeconds / 60)} دقیقه · ${exam.difficulty}`,
-    accent: "html"
+    accent: getExamCardTheme(exam.slug, exam.difficulty)
   })) ?? fallbackExams;
   return (
     <main className="exam-hub" id="main-content">
@@ -69,7 +70,7 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
         <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های آماده</span><h2 id="exams-title">آزمون مناسب سطح خودت را انتخاب کن</h2></div><p>پیش از شروع، زمان، سطح و موضوع هر آزمون را با خیال راحت بررسی کن.</p></div>
         <div className="hub-exam-grid">
           {exams.map((exam) => (
-            <article className={`hub-exam-card hub-exam-card--${exam.accent}`} key={exam.href}>
+            <article className={`hub-exam-card exam-card--${exam.accent}`} key={exam.href}>
               <span className="hub-exam-card__label">{exam.category}</span>
               <h3>{exam.label}</h3>
               <p>{exam.description}</p>
