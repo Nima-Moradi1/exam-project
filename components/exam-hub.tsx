@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { ArrowIcon, ClockIcon, CodeIcon, ListIcon, ShieldIcon } from "@/components/icons";
 
-const exams = [
+const fallbackExams = [
   {
     href: "/html",
     label: "آزمون HTML",
@@ -21,7 +21,17 @@ const exams = [
   }
 ] as const;
 
-export function ExamHub() {
+type DiscoveryExam = { slug: string; title: string; categoryName: string; shortDescription: string; durationSeconds: number; difficulty: string };
+
+export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ name: string; slug: string; description: string | null }>; publishedExams: DiscoveryExam[] } }) {
+  const exams = discovery?.publishedExams.map((exam) => ({
+    href: `/exams/${exam.slug}`,
+    label: exam.title,
+    category: exam.categoryName,
+    description: exam.shortDescription,
+    detail: `${Math.ceil(exam.durationSeconds / 60)} دقیقه · ${exam.difficulty}`,
+    accent: "html"
+  })) ?? fallbackExams;
   return (
     <main className="exam-hub" id="main-content">
       <section className="hub-hero page-shell" aria-labelledby="hub-title">
@@ -38,8 +48,8 @@ export function ExamHub() {
           <div className="hub-summary__top"><span><CodeIcon /></span><p>مسیر یادگیری تو</p></div>
           <strong>سنجش، بازخورد، پیشرفت</strong>
           <div className="hub-summary__stats">
-            <span><b>۳</b> آزمون فعال</span>
-            <span><b>۱۱۰</b> پرسش کاربردی</span>
+            <span><b>{exams.length.toLocaleString("fa-IR")}</b> آزمون فعال</span>
+            <span><b>{discovery?.rootCategories.length.toLocaleString("fa-IR") ?? "۳"}</b> مسیر یادگیری</span>
           </div>
           <div className="hub-summary__line"><i /> آمادهٔ شروعی؟</div>
         </aside>
@@ -53,6 +63,7 @@ export function ExamHub() {
 
       <section className="hub-exams page-shell" id="exams" aria-labelledby="exams-title">
         <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های موجود</span><h2 id="exams-title">از همین‌جا مسیرت را انتخاب کن</h2></div><p>آزمون‌های جدید به‌مرور به این مجموعه اضافه می‌شوند.</p></div>
+        {discovery?.rootCategories.length ? <div className="catalog-grid">{discovery.rootCategories.map((category) => <Link className="catalog-card" key={category.slug} href={`/categories/${category.slug}`}><h3>{category.name}</h3><p>{category.description}</p></Link>)}</div> : null}
         <div className="hub-exam-grid">
           {exams.map((exam) => (
             <article className={`hub-exam-card hub-exam-card--${exam.accent}`} key={exam.href}>

@@ -14,6 +14,15 @@ export async function getPublicExamBySlug(slug: string) {
   }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).where(and(eq(exams.slug, slug), eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).limit(1).then((rows) => rows[0] ?? null);
 }
 
+export async function getPublicHomeDiscovery() {
+  const db = getDb();
+  const [rootCategories, publishedExams] = await Promise.all([
+    db.select({ id: categories.id, name: categories.name, slug: categories.slug, description: categories.description, locale: categories.locale, direction: categories.direction }).from(categories).where(and(isNull(categories.parentId), eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder)).limit(6),
+    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(12)
+  ]);
+  return { rootCategories, publishedExams };
+}
+
 export async function getExamOutline(examId: string) {
   return getDb().select().from(examOutlineItems).where(eq(examOutlineItems.examId, examId)).orderBy(asc(examOutlineItems.sortOrder));
 }
