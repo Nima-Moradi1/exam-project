@@ -112,7 +112,11 @@ async function seedResources() {
     ["PostgreSQL Tutorial", "https://www.postgresql.org/docs/current/tutorial.html", "DOCUMENTATION", "postgresql"],
     ["Docker Get Started", "https://docs.docker.com/get-started/", "DOCUMENTATION", "docker"],
     ["Kubernetes Basics", "https://kubernetes.io/docs/tutorials/kubernetes-basics/", "DOCUMENTATION", "kubernetes"],
-    ["British Council IELTS preparation", "https://takeielts.britishcouncil.org/take-ielts/prepare", "EXERCISE", "ielts-reading"]
+    ["British Council IELTS preparation", "https://takeielts.britishcouncil.org/take-ielts/prepare", "EXERCISE", "ielts-reading"],
+    ["LearnEnglish video series", "https://learnenglish.britishcouncil.org/free-resources/general/video-series", "VIDEO", "ielts-reading"],
+    ["LearnEnglish podcasts", "https://learnenglish.britishcouncil.org/free-resources/general/audio-series/podcasts/s3", "PODCAST", "ielts-reading"],
+    ["Film English viewing guides", "https://film-english.com/", "FILM", "ielts-reading"],
+    ["Alice's Adventures in Wonderland", "https://www.gutenberg.org/ebooks/11", "BOOK", "ielts-reading"]
   ] as const;
   for (const [title, url, type, topicSlug] of resources) {
     const existing = await db.select({ id: learningResources.id }).from(learningResources).where(eq(learningResources.url, url)).limit(1);

@@ -3,7 +3,7 @@ import "server-only";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
-import { categories, examOutlineItems, exams, questionAcceptedAnswers, questionOptions, questions } from "@/lib/db/schema";
+import { categories, examOutlineItems, exams, questionAcceptedAnswers, questionOptions, questionTopics, questions } from "@/lib/db/schema";
 import { resolveDirection } from "./types";
 
 export async function getPublicExamBySlug(slug: string) {
@@ -55,7 +55,8 @@ export async function getExamQuestionsForSnapshot(examId: string) {
   return Promise.all(questionRows.map(async (question) => ({
     question,
     options: await db.select().from(questionOptions).where(eq(questionOptions.questionId, question.id)).orderBy(asc(questionOptions.sortOrder)),
-    acceptedAnswers: await db.select().from(questionAcceptedAnswers).where(eq(questionAcceptedAnswers.questionId, question.id)).orderBy(asc(questionAcceptedAnswers.sortOrder))
+    acceptedAnswers: await db.select().from(questionAcceptedAnswers).where(eq(questionAcceptedAnswers.questionId, question.id)).orderBy(asc(questionAcceptedAnswers.sortOrder)),
+    topicIds: (await db.select({ topicId: questionTopics.topicId }).from(questionTopics).where(eq(questionTopics.questionId, question.id))).map((topic) => topic.topicId)
   })));
 }
 

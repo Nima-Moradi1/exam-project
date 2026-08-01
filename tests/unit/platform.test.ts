@@ -52,4 +52,12 @@ describe("platform domain rules", () => {
     ], [{ topicId: "html", incorrectCount: 2, unansweredCount: 1, availablePoints: 3, awardedPoints: 0 }], "en");
     expect(resources.map((resource) => resource.id)).toEqual(["1", "2"]);
   });
+
+  it("falls back to locale-matching curated resources when an attempt has no tagged weak topics", () => {
+    const resources = selectDeterministicResources([
+      { id: "1", title: "English video", description: "", type: "VIDEO", url: "https://example.com/video", locale: "en", topicIds: [] },
+      { id: "2", title: "Persian article", description: "", type: "ARTICLE", url: "https://example.com/article", locale: "fa", topicIds: [] }
+    ], [], "fa");
+    expect(resources.map((resource) => resource.id)).toEqual(["1", "2"]);
+  });
 });

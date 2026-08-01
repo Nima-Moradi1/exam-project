@@ -6,12 +6,12 @@ import { writeAuditLog } from "@/lib/audit/service";
 import { assertOwnershipOrPermission, requireActiveUser } from "@/lib/auth/guards";
 import { type Role } from "@/lib/auth/permissions";
 import { getDb } from "@/lib/db";
-import { attemptAnswers, attemptQuestionSnapshots, examAttempts, exams } from "@/lib/db/schema";
+import { attemptAnswers, attemptQuestionSnapshots, attemptTopicPerformance, examAttempts, exams } from "@/lib/db/schema";
 import { getExamQuestionsForSnapshot, toPublicQuestionSnapshot } from "@/lib/exams/queries";
 import type { PublicAttemptDto, PublicQuestionDto } from "@/lib/exams/types";
 import { deterministicResultMessage, gradeAttempt } from "@/lib/grading/grade-attempt";
 import type { GradingSnapshot } from "@/lib/grading/types";
-import { createDeterministicRecommendations } from "@/lib/recommendations/service";
+import { createPersonalizedRecommendations, getRecommendationsForAttempt, type TopicWeakness } from "@/lib/recommendations/service";
 import { assertAttemptTransition } from "./status";
 
 function shuffle<T>(items: readonly T[]) {
@@ -34,6 +34,23 @@ function isAnswerShapeValid(question: PublicQuestionDto, value: unknown) {
 
 function asPublicQuestion(snapshot: typeof attemptQuestionSnapshots.$inferSelect): PublicQuestionDto {
   return { ...(snapshot.publicSnapshot as PublicQuestionDto), id: snapshot.id };
+}
+
+function collectTopicWeaknesses(snapshots: Array<typeof attemptQuestionSnapshots.$inferSelect>, grade: ReturnType<typeof gradeAttempt>): TopicWeakness[] {
+  const performance = new Map<string, TopicWeakness>();
+  for (const item of grade.items) {
+    const snapshot = snapshots.find((candidate) => candidate.id === item.snapshotId);
+    const topicIds = snapshot ? (snapshot.gradingSnapshot as unknown as GradingSnapshot).topicIds ?? [] : [];
+    for (const topicId of topicIds) {
+      const current = performance.get(topicId) ?? { topicId, availablePoints: 0, awardedPoints: 0, incorrectCount: 0, unansweredCount: 0 };
+      current.availablePoints += item.maxPoints;
+      current.awardedPoints += item.pointsAwarded;
+      if (item.status === "INCORRECT") current.incorrectCount += 1;
+      if (item.status === "UNANSWERED") current.unansweredCount += 1;
+      performance.set(topicId, current);
+    }
+  }
+  return [...performance.values()];
 }
 
 function asDto(input: {
@@ -105,7 +122,7 @@ export async function startAttempt(examId: string): Promise<PublicAttemptDto> {
         numericTarget: typeof item.question.settings.target === "number" ? item.question.settings.target : undefined,
         ordering: Array.isArray(item.question.settings.ordering) ? item.question.settings.ordering.filter((id): id is string => typeof id === "string") : undefined,
         matchingPairs: Array.isArray(item.question.settings.pairs) ? item.question.settings.pairs.filter((pair): pair is { leftId: string; rightId: string } => Boolean(pair) && typeof pair === "object" && typeof (pair as { leftId?: unknown }).leftId === "string" && typeof (pair as { rightId?: unknown }).rightId === "string") : undefined,
-        explanation: item.question.explanation, modelAnswer: item.question.modelAnswer
+        explanation: item.question.explanation, modelAnswer: item.question.modelAnswer, topicIds: item.topicIds
       };
       return { attemptId: created.id, sourceQuestionId: item.question.id, position: index + 1, publicSnapshot, gradingSnapshot, maxPoints: item.question.points };
     });
@@ -177,14 +194,35 @@ export async function submitAttempt(attemptId: string, finalAnswers: Array<{ sna
   if (!exam) throw new Error("NOT_FOUND");
   const bySnapshot = new Map(answers.map((answer) => [answer.snapshotId, answer.answer]));
   const result = gradeAttempt(snapshots.map((snapshot) => ({ snapshotId: snapshot.id, snapshot: snapshot.gradingSnapshot as unknown as GradingSnapshot, value: bySnapshot.get(snapshot.id) ?? null })));
+  const topicWeaknesses = collectTopicWeaknesses(snapshots, result);
   const finalStatus = result.pendingReviewCount ? "PENDING_REVIEW" : "COMPLETED";
   await db.transaction(async (transaction) => {
     await transaction.update(examAttempts).set({ status: finalStatus, submittedAt: new Date(), completedAt: finalStatus === "COMPLETED" ? new Date() : null, scorePoints: result.awardedPoints, scorePercent: Math.round(result.scorePercent), correctCount: result.correctCount, incorrectCount: result.incorrectCount, partialCount: result.partialCount, unansweredCount: result.unansweredCount, pendingReviewCount: result.pendingReviewCount, resultMessage: deterministicResultMessage(result.scorePercent, exam.locale), durationUsedSeconds: Math.max(0, Math.round((Date.now() - attempt.startedAt.getTime()) / 1_000)), updatedAt: new Date() }).where(eq(examAttempts.id, attemptId));
     for (const item of result.items) {
       await transaction.update(attemptAnswers).set({ status: item.status, pointsAwarded: item.pointsAwarded, gradedAt: new Date(), updatedAt: new Date() }).where(and(eq(attemptAnswers.attemptId, attemptId), eq(attemptAnswers.snapshotId, item.snapshotId)));
     }
+    if (topicWeaknesses.length) await transaction.insert(attemptTopicPerformance).values(topicWeaknesses.map((topic) => ({
+      attemptId,
+      topicId: topic.topicId,
+      availablePoints: topic.availablePoints,
+      awardedPoints: topic.awardedPoints,
+      incorrectCount: topic.incorrectCount,
+      unansweredCount: topic.unansweredCount
+    })));
   });
-  await createDeterministicRecommendations(attemptId, exam.locale, []);
+  await createPersonalizedRecommendations({
+    attemptId,
+    locale: exam.locale,
+    examTitle: exam.title,
+    examDifficulty: exam.difficulty,
+    scorePercent: Math.round(result.scorePercent),
+    correctCount: result.correctCount,
+    incorrectCount: result.incorrectCount,
+    partialCount: result.partialCount,
+    unansweredCount: result.unansweredCount,
+    pendingReviewCount: result.pendingReviewCount,
+    weaknesses: topicWeaknesses
+  });
   await writeAuditLog({ actorUserId: user.id, action: "SUBMIT_ATTEMPT", entityType: "attempt", entityId: attemptId });
   return getAttemptResult(attemptId, user.id, user.role as Role);
 }
@@ -208,14 +246,16 @@ export async function getAttemptResult(attemptId: string, actorId?: string, acto
   if (!attempt) throw new Error("NOT_FOUND");
   assertOwnershipOrPermission({ ownerId: attempt.userId, actorId: actor.id, actorRole: actor.role as Role, permission: "attempt:read:any" });
   if (!["COMPLETED", "PENDING_REVIEW"].includes(attempt.status)) throw new Error("RESULT_NOT_READY");
-  const [exam, snapshots, answers] = await Promise.all([
+  const [exam, snapshots, answers, recommendation] = await Promise.all([
     db.select().from(exams).where(eq(exams.id, attempt.examId)).limit(1).then((rows) => rows[0]),
     db.select().from(attemptQuestionSnapshots).where(eq(attemptQuestionSnapshots.attemptId, attemptId)).orderBy(asc(attemptQuestionSnapshots.position)),
-    db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId))
+    db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId)),
+    getRecommendationsForAttempt(attemptId)
   ]);
   const answerBySnapshot = new Map(answers.map((answer) => [answer.snapshotId, answer]));
   return {
     attempt: { id: attempt.id, status: attempt.status, scorePercent: attempt.scorePercent, scorePoints: attempt.scorePoints, maxPoints: attempt.maxPoints, message: attempt.resultMessage, locale: exam?.locale ?? "fa", direction: exam?.direction ?? "AUTO" },
+    recommendation,
     items: snapshots.map((snapshot) => {
       const publicSnapshot = asPublicQuestion(snapshot);
       const grading = snapshot.gradingSnapshot as unknown as GradingSnapshot;
