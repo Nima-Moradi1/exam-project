@@ -18,6 +18,44 @@ export type CategoryTreeNode = {
   children: CategoryTreeNode[];
 };
 
+export type CategoryBreadcrumb = { id: string; name: string; slug: string };
+
+type PublicCategoryPathNode = {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+  locale: string;
+  direction: "AUTO" | "LTR" | "RTL";
+};
+
+async function resolveCategoryPath(segments: string[], includeHidden: boolean) {
+  if (!segments.length) return null;
+  const rows = await getDb().select({
+    id: categories.id,
+    parentId: categories.parentId,
+    name: categories.name,
+    slug: categories.slug,
+    description: categories.description,
+    locale: categories.locale,
+    direction: categories.direction
+  }).from(categories).where(includeHidden ? isNull(categories.deletedAt) : and(eq(categories.status, "ACTIVE"), isNull(categories.deletedAt)));
+  const byParentAndSlug = new Map(rows.map((row) => [`${row.parentId ?? "root"}:${row.slug}`, row]));
+  const breadcrumbs: CategoryBreadcrumb[] = [];
+  let parentId: string | null = null;
+  let category: PublicCategoryPathNode | undefined;
+
+  for (const slug of segments) {
+    category = byParentAndSlug.get(`${parentId ?? "root"}:${slug}`);
+    if (!category) return null;
+    breadcrumbs.push({ id: category.id, name: category.name, slug: category.slug });
+    parentId = category.id;
+  }
+
+  return category ? { category, breadcrumbs } : null;
+}
+
 export async function getCategoryTree({ includeHidden = false }: { includeHidden?: boolean } = {}) {
   const db = getDb();
   const rows = await db.select({
@@ -36,19 +74,11 @@ export async function getCategoryTree({ includeHidden = false }: { includeHidden
 }
 
 export async function getCategoryByPath(segments: string[], { includeHidden = false }: { includeHidden?: boolean } = {}) {
-  if (!segments.length) return null;
-  const db = getDb();
-  let parentId: string | null = null;
-  let category: typeof categories.$inferSelect | undefined;
-  for (const slug of segments) {
-    const conditions = [eq(categories.slug, slug), isNull(categories.deletedAt)];
-    conditions.push(parentId ? eq(categories.parentId, parentId) : isNull(categories.parentId));
-    if (!includeHidden) conditions.push(eq(categories.status, "ACTIVE"));
-    category = await db.select().from(categories).where(and(...conditions)).limit(1).then((rows) => rows[0]);
-    if (!category) return null;
-    parentId = category.id;
-  }
-  return category ?? null;
+  return (await resolveCategoryPath(segments, includeHidden))?.category ?? null;
+}
+
+export async function getPublicCategoryPath(segments: string[]) {
+  return resolveCategoryPath(segments, false);
 }
 
 export async function getCategoryBreadcrumbs(categoryId: string) {
@@ -66,12 +96,12 @@ export async function getCategoryBreadcrumbs(categoryId: string) {
   return breadcrumbs;
 }
 
-export async function getPublicCategoryPage(categoryId: string) {
+export async function getPublicCategoryPage(categoryId: string, providedBreadcrumbs?: CategoryBreadcrumb[]) {
   const db = getDb();
   const [children, publishedExams, breadcrumbs] = await Promise.all([
     db.select().from(categories).where(and(eq(categories.parentId, categoryId), eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder), asc(categories.name)),
     db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, difficulty: exams.difficulty, durationSeconds: exams.durationSeconds, passingScorePercent: exams.passingScorePercent }).from(exams).where(and(eq(exams.categoryId, categoryId), eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt))).orderBy(asc(exams.title)),
-    getCategoryBreadcrumbs(categoryId)
+    providedBreadcrumbs ? Promise.resolve(providedBreadcrumbs) : getCategoryBreadcrumbs(categoryId)
   ]);
   return { children, exams: publishedExams, breadcrumbs };
 }
