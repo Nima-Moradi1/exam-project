@@ -4,36 +4,46 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+function getSafeCallbackUrl(value: string | null) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
+}
+
 export function LoginForm({ googleEnabled }: { googleEnabled: boolean }) {
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = getSafeCallbackUrl(searchParams.get("callbackUrl"));
+  const loginError = error || (searchParams.get("error") ? "نام کاربری یا رمز عبور نادرست است." : "");
 
   async function onSubmit(formData: FormData) {
     setPending(true);
     setError("");
-    const result = await signIn("credentials", {
-      username: String(formData.get("username") ?? ""),
-      password: String(formData.get("password") ?? ""),
-      redirect: false,
-      redirectTo: callbackUrl
-    });
-    if (!result?.ok) {
-      setError("نام کاربری یا رمز عبور نادرست است.");
+    try {
+      await signIn("credentials", {
+        username: String(formData.get("username") ?? ""),
+        password: String(formData.get("password") ?? ""),
+        redirectTo: callbackUrl
+      });
+    } catch {
+      setError("ورود انجام نشد. دوباره تلاش کنید.");
       setPending(false);
-      return;
     }
-    window.location.assign(result.url || callbackUrl);
   }
 
   return (
-    <form action={onSubmit} className="auth-form" noValidate>
+    <form
+      className="auth-form"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        void onSubmit(new FormData(event.currentTarget));
+      }}
+    >
       <label htmlFor="username">نام کاربری</label>
       <input id="username" name="username" autoComplete="username" required minLength={3} />
       <label htmlFor="password">رمز عبور</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required />
-      {error && <p role="alert" className="form-error">{error}</p>}
+      {loginError && <p role="alert" className="form-error">{loginError}</p>}
       <button className="primary-button" disabled={pending} type="submit">{pending ? "در حال ورود…" : "ورود"}</button>
       {googleEnabled && <button className="secondary-button" type="button" onClick={() => void signIn("google", { redirectTo: callbackUrl })}>ادامه با Google</button>}
     </form>

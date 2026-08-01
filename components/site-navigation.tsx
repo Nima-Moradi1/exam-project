@@ -13,8 +13,11 @@ const publicNavigationItems = [
 
 export function SiteNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const { status } = useSession();
-  const navigationItems = status === "authenticated" ? [...publicNavigationItems, { href: "/profile/exams", label: "نتایج من" }] : publicNavigationItems;
+  const { data: session, status } = useSession();
+  const canManage = ["CONTENT_MANAGER", "ADMIN", "SUPER_ADMIN"].includes(session?.user?.role ?? "");
+  const navigationItems = status === "authenticated"
+    ? [...publicNavigationItems, { href: "/profile/exams", label: "نتایج من" }, ...(canManage ? [{ href: "/admin", label: "مدیریت" }] : [])]
+    : publicNavigationItems;
 
   return (
     <div className="site-navigation">

@@ -18,3 +18,13 @@ declare module "next-auth" {
     status: "ACTIVE" | "SUSPENDED" | "DELETED";
   }
 }
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id?: string;
+    username?: string;
+    displayName?: string | null;
+    role?: "USER" | "CONTENT_MANAGER" | "ADMIN" | "SUPER_ADMIN";
+    status?: "ACTIVE" | "SUSPENDED" | "DELETED";
+  }
+}

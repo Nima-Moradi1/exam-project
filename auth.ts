@@ -59,19 +59,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   return {
     adapter: DrizzleAdapter(getDb()),
     secret: requireAuthSecret(),
-    session: { strategy: "database" },
+    session: { strategy: "jwt" },
     providers,
     pages: {
       signIn: "/login",
       error: "/auth-error"
     },
     callbacks: {
-      async session({ session, user }) {
-        session.user.id = user.id;
-        session.user.username = user.username ?? "";
-        session.user.displayName = user.displayName ?? null;
-        session.user.role = user.role ?? "USER";
-        session.user.status = user.status ?? "ACTIVE";
+      async jwt({ token, user }) {
+        if (user) {
+          token.id = user.id;
+          token.username = user.username ?? "";
+          token.displayName = user.displayName ?? null;
+          token.role = user.role ?? "USER";
+          token.status = user.status ?? "ACTIVE";
+        }
+        return token;
+      },
+      async session({ session, token }) {
+        const userToken = token as typeof token & {
+          id?: string;
+          username?: string;
+          displayName?: string | null;
+          role?: "USER" | "CONTENT_MANAGER" | "ADMIN" | "SUPER_ADMIN";
+          status?: "ACTIVE" | "SUSPENDED" | "DELETED";
+        };
+        session.user.id = userToken.id || token.sub || "";
+        session.user.username = userToken.username ?? "";
+        session.user.displayName = userToken.displayName ?? null;
+        session.user.role = userToken.role ?? "USER";
+        session.user.status = userToken.status ?? "ACTIVE";
         return session;
       }
     }

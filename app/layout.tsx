@@ -39,6 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
               <div className="footer-identity">
                 <strong>نیما مرادی راد</strong>
                 <span>طراحی و توسعهٔ آزمون‌خانه</span>
+                <a className="admin-signin-link" href="/login?callbackUrl=%2Fadmin">ورود مدیران</a>
               </div>
               <div className="footer-socials" aria-label="راه‌های ارتباطی نیما مرادی راد">
                 <a href="https://github.com/Nima-Moradi1" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub"><GithubIcon /></a>
