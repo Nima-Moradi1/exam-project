@@ -11,9 +11,9 @@ import { cssPart1AnswerKey, cssPart2AnswerKey } from "@/lib/questions/css.privat
 import { cssPart1Questions, cssPart2Questions } from "@/lib/questions/css.public";
 import { answerKey } from "@/lib/questions/private.server";
 import { publicQuestions } from "@/lib/questions/public";
-import { sampleExams, type SeedExam, type SeedQuestion } from "./seed-data/sample-exams";
+import { sampleExams, type SeedExam } from "./seed-data/sample-exams";
 
-let db = getDb();
+const db = getDb();
 type CategoryMap = Map<string, string>;
 
 function key(parentKey: string | null, slug: string) { return `${parentKey ?? "root"}:${slug}`; }

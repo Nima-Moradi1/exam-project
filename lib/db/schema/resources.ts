@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgTable, primaryKey, real, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { boolean, index, jsonb, pgTable, primaryKey, real, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { recommendationSource, resourceType } from "./enums";
 import { mediaAssets } from "./media";
