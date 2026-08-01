@@ -8,14 +8,17 @@ import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { changePasswordSchema, normalizeEmail, normalizeUsername, profileSchema, signupSchema } from "@/lib/auth/schemas";
 import { getDb } from "@/lib/db";
 import { sessions, users } from "@/lib/db/schema";
-import { consumeLocalRateLimit } from "@/lib/security/rate-limit";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 
 export type ActionResult = { ok: true } | { ok: false; code: string; message: string };
 
 export async function registerUser(input: unknown): Promise<ActionResult> {
   const parsed = signupSchema.safeParse(input);
   if (!parsed.success) return { ok: false, code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message ?? "اطلاعات ثبت‌نام معتبر نیست." };
-  const rate = consumeLocalRateLimit(`signup:${parsed.data.email}`, 5, 60 * 60 * 1_000);
+  const rate = await consumeRateLimit(`signup:${parsed.data.email}`, 5, 60 * 60 * 1_000);
+  if (rate.provider === "unavailable") {
+    return { ok: false, code: "RATE_LIMIT_UNAVAILABLE", message: "ثبت‌نام موقتاً در دسترس نیست. لطفاً کمی بعد دوباره تلاش کنید." };
+  }
   if (!rate.allowed) return { ok: false, code: "RATE_LIMITED", message: "تلاش‌های ثبت‌نام بیش از حد است. کمی بعد دوباره امتحان کنید." };
 
   const db = getDb();
