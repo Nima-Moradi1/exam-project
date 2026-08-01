@@ -23,7 +23,7 @@ const exams = [
 
 export function ExamHub() {
   return (
-    <main className="exam-hub">
+    <main className="exam-hub" id="main-content">
       <section className="hub-hero page-shell" aria-labelledby="hub-title">
         <div className="hub-hero__content">
           <span className="eyebrow"><i /> پلتفرم سنجش مهارت وب</span>

@@ -57,6 +57,16 @@
   --radius-sm: 12px;
   --radius-md: 20px;
   --radius-lg: 30px;
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --muted-foreground: var(--text-soft);
+  --border: var(--line);
+  --primary: var(--green);
+  --secondary: var(--accent);
+  --destructive: var(--red);
+  --success: var(--green);
+  --warning: var(--amber);
 }
 
 .dark {
@@ -154,6 +164,22 @@ button:not(:disabled) {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+  padding: 8px 12px;
+  color: #fff;
+  background: var(--green);
+  border-radius: 8px;
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 .site-header {

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { ExamHeader } from "@/components/exam-header";
 import { GithubIcon, LinkedinIcon, MailIcon, PhoneIcon, TelegramIcon } from "@/components/icons";
+import { ThemeProvider } from "@/components/theme-provider";
 
 import "./globals.css";
 
@@ -25,42 +26,31 @@ export const viewport: Viewport = {
   ]
 };
 
-const themeScript = `
-(() => {
-  try {
-    const saved = localStorage.getItem("html-exam-theme");
-    const dark = saved === "dark" || (!saved && matchMedia("(prefers-color-scheme: dark)").matches);
-    document.documentElement.classList.toggle("dark", dark);
-    document.documentElement.style.colorScheme = dark ? "dark" : "light";
-  } catch {}
-})();
-`;
-
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="fa" dir="rtl" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body>
-        <ExamHeader />
-        {children}
-        <footer className="site-footer">
-          <div className="page-shell site-footer__inner">
-            <div className="footer-identity">
-              <strong>نیما مرادی راد</strong>
-              <span>طراحی و توسعهٔ آزمون‌خانه</span>
+        <ThemeProvider>
+          <a className="skip-link" href="#main-content">پرش به محتوای اصلی</a>
+          <ExamHeader />
+          {children}
+          <footer className="site-footer">
+            <div className="page-shell site-footer__inner">
+              <div className="footer-identity">
+                <strong>نیما مرادی راد</strong>
+                <span>طراحی و توسعهٔ آزمون‌خانه</span>
+              </div>
+              <div className="footer-socials" aria-label="راه‌های ارتباطی نیما مرادی راد">
+                <a href="https://github.com/Nima-Moradi1" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub"><GithubIcon /></a>
+                <a href="https://www.linkedin.com/in/nima-moradi-rad-1380s" target="_blank" rel="noreferrer" aria-label="LinkedIn" title="LinkedIn"><LinkedinIcon /></a>
+                <a href="https://t.me/Nimamoradirad" target="_blank" rel="noreferrer" aria-label="Telegram" title="Telegram"><TelegramIcon /></a>
+                <a href="mailto:nimamoradirad@gmail.com" aria-label="ایمیل" title="nimamoradirad@gmail.com"><MailIcon /></a>
+                <a href="tel:+989036837788" aria-label="تماس" title="۰۹۰۳۶۸۳۷۷۸۸"><PhoneIcon /></a>
+              </div>
+              <span className="footer-note">پاسخ‌ها تنها هنگام ثبت نهایی ارزیابی می‌شوند.</span>
             </div>
-            <div className="footer-socials" aria-label="راه‌های ارتباطی نیما مرادی راد">
-              <a href="https://github.com/Nima-Moradi1" target="_blank" rel="noreferrer" aria-label="GitHub" title="GitHub"><GithubIcon /></a>
-              <a href="https://www.linkedin.com/in/nima-moradi-rad-1380s" target="_blank" rel="noreferrer" aria-label="LinkedIn" title="LinkedIn"><LinkedinIcon /></a>
-              <a href="https://t.me/Nimamoradirad" target="_blank" rel="noreferrer" aria-label="Telegram" title="Telegram"><TelegramIcon /></a>
-              <a href="mailto:nimamoradirad@gmail.com" aria-label="ایمیل" title="nimamoradirad@gmail.com"><MailIcon /></a>
-              <a href="tel:+989036837788" aria-label="تماس" title="۰۹۰۳۶۸۳۷۷۸۸"><PhoneIcon /></a>
-            </div>
-            <span className="footer-note">پاسخ‌ها تنها هنگام ثبت نهایی ارزیابی می‌شوند.</span>
-          </div>
-        </footer>
+          </footer>
+        </ThemeProvider>
       </body>
     </html>
   );
