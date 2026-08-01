@@ -1,18 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 
 import { NavigationLink } from "@/components/navigation-link";
 
-const navigationItems = [
+const publicNavigationItems = [
   { href: "/", label: "خانه" },
   { href: "/#paths", label: "مسیرهای یادگیری" },
-  { href: "/#exams", label: "آزمون‌ها" },
-  { href: "/profile/exams", label: "نتایج من" }
+  { href: "/#exams", label: "آزمون‌ها" }
 ] as const;
 
 export function SiteNavigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const { status } = useSession();
+  const navigationItems = status === "authenticated" ? [...publicNavigationItems, { href: "/profile/exams", label: "نتایج من" }] : publicNavigationItems;
 
   return (
     <div className="site-navigation">
@@ -23,8 +25,7 @@ export function SiteNavigation() {
       <nav className={`site-nav${isOpen ? " is-open" : ""}`} id="primary-navigation" aria-label="ناوبری اصلی">
         {navigationItems.map((item) => <NavigationLink key={item.href} href={item.href} onNavigate={() => setIsOpen(false)}>{item.label}</NavigationLink>)}
         <div className="site-nav__mobile-actions">
-          <NavigationLink className="secondary-button" href="/login" onNavigate={() => setIsOpen(false)}>ورود</NavigationLink>
-          <NavigationLink className="primary-button" href="/signup" onNavigate={() => setIsOpen(false)}>ثبت‌نام</NavigationLink>
+          <NavigationLink className="primary-button" href={status === "authenticated" ? "/profile" : "/login"} onNavigate={() => setIsOpen(false)}>{status === "authenticated" ? "حساب کاربری" : "ورود یا ثبت‌نام"}</NavigationLink>
         </div>
       </nav>
     </div>

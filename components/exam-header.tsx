@@ -1,7 +1,7 @@
 import Link from "next/link";
 
+import { HeaderAccountAction } from "@/components/header-account-action";
 import { CodeIcon } from "@/components/icons";
-import { NavigationLink } from "@/components/navigation-link";
 import { SiteNavigation } from "@/components/site-navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -20,8 +20,7 @@ export function ExamHeader() {
         </Link>
         <SiteNavigation />
         <div className="site-header__actions">
-          <NavigationLink className="secondary-button site-header__login" href="/login">ورود</NavigationLink>
-          <NavigationLink className="primary-button site-header__signup" href="/signup">ثبت‌نام</NavigationLink>
+          <HeaderAccountAction />
           <ThemeToggle />
         </div>
       </div>

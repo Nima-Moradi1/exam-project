@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 
 const accountPaths = ["/profile", "/attempts"];
 
-export default auth((request) => {
+const handleProxy = auth((request) => {
   const { pathname } = request.nextUrl;
   const session = request.auth;
   const needsAccount = accountPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -20,6 +20,10 @@ export default auth((request) => {
   }
   return NextResponse.next();
 });
+
+export function proxy(...args: Parameters<typeof handleProxy>) {
+  return handleProxy(...args);
+}
 
 export const config = {
   matcher: ["/profile/:path*", "/attempts/:path*", "/admin/:path*"]

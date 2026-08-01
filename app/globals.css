@@ -2528,21 +2528,6 @@ button:not(:disabled) {
   color: var(--text);
 }
 
-.navigation-link__spinner {
-  inline-size: 13px;
-  block-size: 13px;
-  flex: 0 0 auto;
-  border: 2px solid currentColor;
-  border-block-start-color: transparent;
-  border-radius: 50%;
-  animation: spin 700ms linear infinite;
-}
-
-a.is-navigating {
-  cursor: progress;
-  pointer-events: none;
-}
-
 .hub-paths {
   margin-top: clamp(64px, 9vw, 120px);
 }
@@ -2759,7 +2744,6 @@ a.is-navigating {
 
 @media (max-width: 900px) {
   .site-nav a:nth-child(2) { display: none; }
-  .site-header__login { display: none; }
 }
 
 @media (max-width: 700px) {
@@ -2804,7 +2788,6 @@ a.is-navigating {
   .site-nav__mobile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-block-start: 8px; border-block-start: 1px solid var(--line); }
   .site-nav__mobile-actions a { justify-content: center; }
   .site-header__actions { gap: 6px; }
-  .site-header__signup { display: none; }
   .theme-toggle { inline-size: 38px; block-size: 38px; }
   .hub-path-grid { grid-template-columns: 1fr; }
   .hub-path-card { min-height: 195px; }
@@ -2815,6 +2798,68 @@ a.is-navigating {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loading-skeleton,
-  .navigation-link__spinner { animation: none; }
+  .loading-skeleton { animation: none; }
+}
+
+/* Compact authentication forms: the complete flow fits on standard laptops. */
+.auth-page {
+  min-height: calc(100svh - 164px);
+  display: grid;
+  align-items: center;
+  padding-block: clamp(18px, 3.5vh, 38px);
+}
+
+.auth-card {
+  width: min(100%, 720px);
+  padding: clamp(20px, 3vw, 32px);
+}
+
+.auth-card > p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: .9rem;
+  line-height: 1.85;
+}
+
+.auth-form {
+  gap: 9px;
+  margin-block-start: 18px;
+}
+
+.auth-form input {
+  min-height: 40px;
+}
+
+.auth-form__field {
+  display: grid;
+  gap: 4px;
+}
+
+.auth-form--signup {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 14px;
+}
+
+.auth-form--signup .form-hint,
+.auth-form--signup .checkbox-label,
+.auth-form--signup .form-error,
+.auth-form--signup button,
+.auth-form--signup > p:last-child {
+  grid-column: 1 / -1;
+}
+
+.auth-form--signup .form-hint {
+  font-size: .72rem;
+  line-height: 1.6;
+}
+
+.auth-footer {
+  margin-block: 16px 0;
+  font-size: .82rem;
+}
+
+@media (max-width: 640px) {
+  .auth-page { align-items: start; padding-block: 22px 34px; }
+  .auth-card { padding: 22px 18px; }
+  .auth-form--signup { grid-template-columns: 1fr; }
 }
