@@ -338,7 +338,7 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
 
   if (questions.length === 0) {
     return (
-      <main className="empty-screen page-shell">
+      <main id="main-content" className="empty-screen page-shell">
         <AlertIcon />
         <h1>پرسشی برای نمایش وجود ندارد</h1>
         <p>لطفاً کمی بعد دوباره تلاش کنید.</p>
@@ -347,7 +347,7 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
   }
 
   if (!attemptLoaded) {
-    return <main className="empty-screen page-shell"><p>در حال بازیابی آزمون…</p></main>;
+    return <main id="main-content" className="empty-screen page-shell"><p>در حال بازیابی آزمون…</p></main>;
   }
 
   if (phase === "welcome") return (
@@ -365,6 +365,7 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
 
   return (
     <main
+      id="main-content"
       className="exam-page page-shell no-select"
       onContextMenu={(event) => {
         event.preventDefault();

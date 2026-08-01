@@ -19,7 +19,7 @@ export function ResultsScreen({ result, examTitle = "HTML" }: ResultsScreenProps
   const dashOffset = circumference * (1 - result.percentage / 100);
 
   return (
-    <main className="results page-shell">
+    <main className="results page-shell" id="main-content">
       <section className="result-hero" aria-labelledby="result-title">
         <div className="score-ring" aria-label={`امتیاز ${result.percentage} درصد`}>
           <svg viewBox="0 0 124 124" aria-hidden="true">

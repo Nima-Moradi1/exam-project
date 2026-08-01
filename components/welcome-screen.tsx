@@ -43,7 +43,7 @@ export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = fal
     "برای هر پرسش تنها یک پاسخ در نظر گرفته شده است."
   ];
   return (
-    <main className="welcome page-shell">
+    <main className="welcome page-shell" id="main-content">
       <section className="welcome__hero" aria-labelledby="welcome-title">
         <div className="eyebrow">
           <span />
