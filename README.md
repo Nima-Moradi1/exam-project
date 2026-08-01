@@ -50,6 +50,7 @@ pnpm dev
 | `DATABASE_URL_UNPOOLED` | URL unpooled برای migration یا transactionهای سازگار |
 | `DATABASE_URL_TEST` | دیتابیس جدا برای integration test |
 | `AUTH_SECRET` | secret تصادفی طولانی برای Auth.js |
+| `AUTH_TRUST_HOST` | در Vercel برای Preview و Production برابر `true`؛ اعتماد Auth.js به دامنهٔ deployment |
 | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | OAuth Google؛ در صورت خالی‌بودن provider نمایش داده نمی‌شود |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob برای مدیریت رسانه |
 | `AI_PROVIDER`, `AI_MODEL` | `none`، `openai`، `google` یا `xai` و نام مدل |
