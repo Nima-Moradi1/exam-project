@@ -1,6 +1,5 @@
-import Link from "next/link";
-
 import { ArrowIcon, ClockIcon, CodeIcon, ListIcon, ShieldIcon } from "@/components/icons";
+import { NavigationLink } from "@/components/navigation-link";
 
 const fallbackExams = [
   {
@@ -40,8 +39,8 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
           <h1 id="hub-title">با آزمون‌های هدفمند،<br /><span>یادگیریت را بسنج.</span></h1>
           <p>مجموعه‌ای رو‌به‌رشد از آزمون‌های عملی وب؛ زمان‌بندی دقیق، تصحیح امن و بازخورد روشن برای هر پاسخ.</p>
           <div className="hub-hero__actions">
-            <a className="primary-button primary-button--large" href="#exams">مشاهده آزمون‌ها <ArrowIcon /></a>
-            <Link className="hub-text-link" href="/html">شروع با HTML</Link>
+            <NavigationLink className="primary-button primary-button--large" href="/#exams">مشاهده آزمون‌ها <ArrowIcon /></NavigationLink>
+            <NavigationLink className="hub-text-link" href="/#paths">انتخاب مسیر یادگیری</NavigationLink>
           </div>
         </div>
         <aside className="hub-summary" aria-label="ویژگی‌های پلتفرم">
@@ -61,16 +60,20 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
         <article><span><ListIcon /></span><div><strong>بازخورد کاربردی</strong><p>پاسخ‌نامه و نکتهٔ آموزشی هر سؤال را ببین.</p></div></article>
       </section>
 
+      <section className="hub-paths page-shell" id="paths" aria-labelledby="paths-title">
+        <div className="hub-section-heading"><div><span className="eyebrow"><i /> از کجا شروع کنم؟</span><h2 id="paths-title">ابتدا موضوعی را که می‌خواهی تقویت کنی انتخاب کن</h2></div><p>هر مسیر، دسته‌بندی‌ها و آزمون‌های مرتبط را در یک صفحهٔ روشن و قابل‌فهم جمع می‌کند.</p></div>
+        {discovery?.rootCategories.length ? <div className="hub-path-grid">{discovery.rootCategories.map((category, index) => <NavigationLink className="hub-path-card" key={category.slug} href={`/categories/${category.slug}`}><span>مسیر {(index + 1).toLocaleString("fa-IR")}</span><h3>{category.name}</h3><p>{category.description || "دسته‌بندی‌ها و آزمون‌های این مسیر را بررسی کنید."}</p><strong>دیدن مسیر <ArrowIcon /></strong></NavigationLink>)}</div> : <p className="empty-state">مسیر یادگیری فعالی برای نمایش وجود ندارد.</p>}
+      </section>
+
       <section className="hub-exams page-shell" id="exams" aria-labelledby="exams-title">
-        <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های موجود</span><h2 id="exams-title">از همین‌جا مسیرت را انتخاب کن</h2></div><p>آزمون‌های جدید به‌مرور به این مجموعه اضافه می‌شوند.</p></div>
-        {discovery?.rootCategories.length ? <div className="catalog-grid">{discovery.rootCategories.map((category) => <Link className="catalog-card" key={category.slug} href={`/categories/${category.slug}`}><h3>{category.name}</h3><p>{category.description}</p></Link>)}</div> : null}
+        <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های آماده</span><h2 id="exams-title">آزمون مناسب سطح خودت را انتخاب کن</h2></div><p>پیش از شروع، زمان، سطح و موضوع هر آزمون را با خیال راحت بررسی کن.</p></div>
         <div className="hub-exam-grid">
           {exams.map((exam) => (
             <article className={`hub-exam-card hub-exam-card--${exam.accent}`} key={exam.href}>
               <span className="hub-exam-card__label">{exam.category}</span>
               <h3>{exam.label}</h3>
               <p>{exam.description}</p>
-              <div><span>{exam.detail}</span><Link href={exam.href} aria-label={`ورود به ${exam.label}`}>ورود <ArrowIcon /></Link></div>
+              <div><span>{exam.detail}</span><NavigationLink href={exam.href} aria-label={`مشاهدهٔ ${exam.label}`}>مشاهده و شروع <ArrowIcon /></NavigationLink></div>
             </article>
           ))}
         </div>
