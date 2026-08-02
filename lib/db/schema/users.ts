@@ -34,13 +34,13 @@ export const accounts = pgTable("accounts", {
   type: varchar("type", { length: 255 }).notNull(),
   provider: varchar("provider", { length: 255 }).notNull(),
   providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
-  refreshToken: text("refresh_token"),
-  accessToken: text("access_token"),
-  expiresAt: integer("expires_at"),
-  tokenType: varchar("token_type", { length: 255 }),
+  refresh_token: text("refresh_token"),
+  access_token: text("access_token"),
+  expires_at: integer("expires_at"),
+  token_type: varchar("token_type", { length: 255 }),
   scope: text("scope"),
-  idToken: text("id_token"),
-  sessionState: text("session_state")
+  id_token: text("id_token"),
+  session_state: text("session_state")
 }, (table) => [primaryKey({ columns: [table.provider, table.providerAccountId] }), index("accounts_user_id_idx").on(table.userId)]);
 
 export const sessions = pgTable("sessions", {

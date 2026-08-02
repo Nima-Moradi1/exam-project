@@ -8,8 +8,9 @@ import { eq } from "drizzle-orm";
 import { credentialsSchema } from "@/lib/auth/schemas";
 import { verifyPassword } from "@/lib/auth/password";
 import { getDb } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { accounts, sessions, users, verificationTokens } from "@/lib/db/schema";
 import { getServerEnvironment, requireAuthSecret } from "@/lib/env/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   const environment = getServerEnvironment();
@@ -23,6 +24,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
       async authorize(credentials) {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
+        const rate = await consumeRateLimit(`login:${parsed.data.username}`, 10, 15 * 60_000);
+        if (!rate.allowed) return null;
 
         const db = getDb();
         const user = await db.select().from(users)
@@ -57,7 +60,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth(() => {
   }
 
   return {
-    adapter: DrizzleAdapter(getDb()),
+    // Explicit mappings prevent the adapter from falling back to singular
+    // default relation names such as `account`, which caused production 42P01.
+    adapter: DrizzleAdapter(getDb(), {
+      usersTable: users,
+      accountsTable: accounts,
+      sessionsTable: sessions,
+      verificationTokensTable: verificationTokens
+    }),
+    trustHost: environment.AUTH_TRUST_HOST === "true" || !process.env.VERCEL,
     secret: requireAuthSecret(),
     session: { strategy: "jwt" },
     providers,

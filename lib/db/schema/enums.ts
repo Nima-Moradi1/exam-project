@@ -3,7 +3,7 @@ import { pgEnum } from "drizzle-orm/pg-core";
 export const userRole = pgEnum("user_role", ["USER", "CONTENT_MANAGER", "ADMIN", "SUPER_ADMIN"]);
 export const userStatus = pgEnum("user_status", ["ACTIVE", "SUSPENDED", "DELETED"]);
 export const categoryStatus = pgEnum("category_status", ["ACTIVE", "HIDDEN", "ARCHIVED"]);
-export const examStatus = pgEnum("exam_status", ["DRAFT", "PUBLISHED", "ARCHIVED"]);
+export const examStatus = pgEnum("exam_status", ["DRAFT", "IN_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED"]);
 export const examDirection = pgEnum("exam_direction", ["AUTO", "LTR", "RTL"]);
 export const examDifficulty = pgEnum("exam_difficulty", ["BEGINNER", "ELEMENTARY", "INTERMEDIATE", "UPPER_INTERMEDIATE", "ADVANCED", "EXPERT"]);
 export const questionType = pgEnum("question_type", ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "DROPDOWN", "SHORT_TEXT", "LONG_TEXT", "NUMERIC", "ORDERING", "MATCHING"]);
