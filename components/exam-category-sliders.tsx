@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Autocomplete, Input, Label, ListBox } from "@heroui/react";
 
 import { ArrowIcon } from "@/components/icons";
 import { NavigationLink } from "@/components/navigation-link";
@@ -32,14 +33,21 @@ function Carousel({ path, exams }: { path: LearningPath; exams: SliderExam[] }) 
   </section>;
 }
 
+function FilterAutocomplete({ label, placeholder, items, selected, onChange }: { label: string; placeholder: string; items: Array<[string, string]>; selected: Set<string>; onChange: (values: Set<string>) => void }) {
+  return <div className="exam-autocomplete-wrap"><Autocomplete aria-label={label} className="exam-autocomplete" fullWidth selectedKey={null} onSelectionChange={(key) => { if (key) onChange(new Set([...selected, String(key)])); }}>
+    <Label>{label}</Label>
+    <Autocomplete.Trigger><Autocomplete.Value>{placeholder}</Autocomplete.Value><Autocomplete.Indicator /></Autocomplete.Trigger>
+    <Autocomplete.Popover><Autocomplete.Filter><Input placeholder={placeholder} /></Autocomplete.Filter><ListBox>{items.map(([slug, name]) => <ListBox.Item id={slug} key={slug} textValue={name}>{name}</ListBox.Item>)}</ListBox></Autocomplete.Popover>
+  </Autocomplete>{selected.size > 0 && <div className="exam-autocomplete-tags" aria-label={`${label} انتخاب‌شده`}>{[...selected].map((slug) => <button key={slug} type="button" onClick={() => onChange(new Set([...selected].filter((value) => value !== slug)))}>{items.find(([value]) => value === slug)?.[1]} <span aria-hidden="true">×</span></button>)}</div>}</div>;
+}
+
 export function ExamCategorySliders({ paths }: { paths: LearningPath[] }) {
-  const [pathSlug, setPathSlug] = useState(paths[0]?.slug ?? "");
-  const [levelSlug, setLevelSlug] = useState("all");
-  const [topicSlug, setTopicSlug] = useState("all");
-  const path = paths.find((entry) => entry.slug === pathSlug) ?? paths[0];
-  const levels = useMemo(() => path ? [...new Map<string, string>(path.exams.map((exam) => [exam.levelSlug, exam.level] as const)).entries()] : [], [path]);
-  const topics = useMemo(() => path ? [...new Map<string, string>(path.exams.map((exam) => [exam.categorySlug, exam.category] as const)).entries()] : [], [path]);
-  const visible = path?.exams.filter((exam) => (levelSlug === "all" || exam.levelSlug === levelSlug) && (topicSlug === "all" || exam.categorySlug === topicSlug)) ?? [];
-  function choosePath(slug: string) { setPathSlug(slug); setLevelSlug("all"); setTopicSlug("all"); }
-  return <div className="exam-discovery"> <div className="exam-path-tabs" role="tablist" aria-label="مسیرهای یادگیری">{paths.map((item) => <button type="button" key={item.slug} role="tab" aria-selected={item.slug === path?.slug} className={item.slug === path?.slug ? "is-active" : undefined} onClick={() => choosePath(item.slug)}>{item.name}</button>)}</div>{path && <><div className="exam-filters"><div><span>سطح / حوزه</span><div className="exam-filter-chips"><button type="button" className={levelSlug === "all" ? "is-active" : undefined} onClick={() => setLevelSlug("all")}>همه</button>{levels.map(([slug, name]) => <button type="button" key={slug} className={levelSlug === slug ? "is-active" : undefined} onClick={() => setLevelSlug(slug)}>{name}</button>)}</div></div><div><span>زیرشاخه</span><div className="exam-filter-chips exam-filter-chips--topics"><button type="button" className={topicSlug === "all" ? "is-active" : undefined} onClick={() => setTopicSlug("all")}>همه</button>{topics.map(([slug, name]) => <button type="button" key={slug} className={`exam-topic-chip exam-topic-chip--${chipThemes[slug] ?? "mint"}${topicSlug === slug ? " is-active" : ""}`} onClick={() => setTopicSlug(slug)}>{labelFor(slug, name)}</button>)}</div></div></div><Carousel key={`${path.slug}-${visible.length}`} path={path} exams={visible} /></>}</div>;
+  const [pathSlugs, setPathSlugs] = useState<Set<string>>(new Set());
+  const [levelSlugs, setLevelSlugs] = useState<Set<string>>(new Set());
+  const [topicSlugs, setTopicSlugs] = useState<Set<string>>(new Set());
+  const selectedPaths = useMemo(() => paths.filter((path) => !pathSlugs.size || pathSlugs.has(path.slug)), [paths, pathSlugs]);
+  const levels = useMemo(() => [...new Map(selectedPaths.flatMap((path) => path.exams).map((exam) => [exam.levelSlug, exam.level] as const)).entries()], [selectedPaths]);
+  const topics = useMemo(() => [...new Map(selectedPaths.flatMap((path) => path.exams).map((exam) => [exam.categorySlug, exam.category] as const)).entries()], [selectedPaths]);
+  const visible = useMemo(() => selectedPaths.flatMap((path) => path.exams).filter((exam) => (!levelSlugs.size || levelSlugs.has(exam.levelSlug)) && (!topicSlugs.size || topicSlugs.has(exam.categorySlug))), [levelSlugs, selectedPaths, topicSlugs]);
+  return <div className="exam-discovery"><div className="exam-autocomplete-grid"><FilterAutocomplete label="مسیرهای یادگیری" placeholder="جست‌وجوی مسیر…" items={paths.map((path) => [path.slug, path.name])} selected={pathSlugs} onChange={(values) => { setPathSlugs(values); setLevelSlugs(new Set()); setTopicSlugs(new Set()); }} /><FilterAutocomplete label="سطح یا حوزه" placeholder="جست‌وجوی سطح…" items={levels} selected={levelSlugs} onChange={setLevelSlugs} /><FilterAutocomplete label="زیرشاخه‌ها" placeholder="جست‌وجوی زیرشاخه…" items={topics} selected={topicSlugs} onChange={setTopicSlugs} /></div><p className="exam-filter-summary">{visible.length.toLocaleString("fa-IR")} آزمون مطابق انتخاب شما پیدا شد.</p><Carousel key={`${[...pathSlugs].join("-")}-${[...levelSlugs].join("-")}-${[...topicSlugs].join("-")}`} path={{ name: "آزمون‌های انتخاب‌شده", slug: "filtered", exams: visible }} exams={visible} /></div>;
 }
