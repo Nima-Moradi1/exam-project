@@ -21,6 +21,7 @@ function key(parentKey: string | null, slug: string) { return `${parentKey ?? "r
 async function ensureCategory(map: CategoryMap, parentKey: string | null, name: string, slug: string, locale = "en") {
   const parentId = parentKey ? map.get(parentKey) ?? null : null;
   const existing = await db.select({ id: categories.id }).from(categories).where(and(eq(categories.slug, slug), parentId ? eq(categories.parentId, parentId) : isNull(categories.parentId))).limit(1).then((rows) => rows[0]);
+  if (existing) await db.update(categories).set({ name, locale, direction: locale === "fa" ? "RTL" : "LTR", updatedAt: new Date() }).where(eq(categories.id, existing.id));
   const id = existing?.id ?? (await db.insert(categories).values({ name, slug, parentId, locale, direction: locale === "fa" ? "RTL" : "LTR", status: "ACTIVE" }).returning({ id: categories.id }))[0]?.id;
   if (!id) throw new Error(`Could not seed category ${slug}`);
   map.set(key(parentKey, slug), id);
@@ -29,12 +30,12 @@ async function ensureCategory(map: CategoryMap, parentKey: string | null, name: 
 
 async function seedCategories() {
   const map: CategoryMap = new Map();
-  const ielts = await ensureCategory(map, null, "IELTS", "ielts");
+  const ielts = await ensureCategory(map, null, "آیلتس", "ielts", "fa");
   for (const level of ["a1", "a2", "b1", "b2", "c1", "c2"]) {
     const levelKey = await ensureCategory(map, ielts, level.toUpperCase(), level);
     for (const item of [["Full Exam", "full"], ["Speaking", "speaking"], ["Writing", "writing"], ["Listening", "listening"], ["Reading", "reading"]] as const) await ensureCategory(map, levelKey, item[0], item[1]);
   }
-  const software = await ensureCategory(map, null, "Software Engineering", "software-engineering");
+  const software = await ensureCategory(map, null, "مهندسی نرم افزار", "software-engineering", "fa");
   const groups = {
     frontend: [["HTML", "html"], ["CSS", "css"], ["JavaScript", "javascript"], ["TypeScript", "typescript"], ["React.js", "react"], ["Next.js", "nextjs"], ["Micro-frontend", "micro-frontend"]],
     backend: [["Node.js", "nodejs"], ["API Design", "api-design"], ["Authentication & Authorization", "authentication"], ["Testing", "testing"], ["System Design", "system-design"]],
