@@ -63,15 +63,13 @@ export async function validateExamForPublication(examId: string) {
       const skill = typeof question.settings.skill === "string" ? question.settings.skill : "";
       bySkill.set(skill, [...(bySkill.get(skill) ?? []), question]);
     }
-    const requiredSkills = ["READING", "LISTENING", "WRITING", "SPEAKING"] as const;
+    const requiredSkills = ["READING", "LISTENING", "WRITING", "VOCABULARY", "GRAMMAR"] as const;
     const missing = requiredSkills.filter((skill) => !bySkill.get(skill)?.length);
-    if (missing.length) failures.push(`آزمون جامع باید هر چهار بخش Reading، Listening، Writing و Speaking را داشته باشد. بخش‌های ناقص: ${missing.join("، ")}.`);
+    if (missing.length) failures.push(`آزمون جامع باید بخش‌های Reading، Listening، Writing، Vocabulary و Grammar را داشته باشد. بخش‌های ناقص: ${missing.join("، ")}.`);
     const listening = bySkill.get("LISTENING") ?? [];
     if (listening.some((question) => typeof question.settings.audioUrl !== "string" && typeof question.settings.audioScript !== "string")) failures.push("هر پرسش Listening در آزمون جامع باید فایل یا متن صوتی داشته باشد.");
     const writing = bySkill.get("WRITING") ?? [];
     if (writing.some((question) => question.type !== "LONG_TEXT" || question.gradingMode === "AUTOMATIC")) failures.push("بخش Writing باید پاسخ تشریحی و بررسی دستی یا هوشمند داشته باشد.");
-    const speaking = bySkill.get("SPEAKING") ?? [];
-    if (speaking.some((question) => question.type !== "LONG_TEXT" || question.gradingMode === "AUTOMATIC" || question.settings.responseMode !== "AUDIO")) failures.push("بخش Speaking باید پاسخ صوتیِ قابل ضبط و بررسی دستی یا هوشمند داشته باشد.");
   }
   for (const question of questionRows) {
     if (question.gradingMode === "AUTOMATIC" && ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "DROPDOWN"].includes(question.type)) {
