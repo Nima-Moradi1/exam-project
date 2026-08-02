@@ -3206,8 +3206,11 @@ button:not(:disabled) {
 }
 .auth-form__field--full,
 .auth-form--signup .auth-form__google { grid-column: 1 / -1; }
-.auth-form--signup > .primary-button { inline-size: 100%; }
-.required-mark { color: var(--danger, #df4f4f); font-weight: 900; }
+.auth-form--signup > .primary-button,
+.auth-form--signup .auth-form__google { inline-size: 100%; }
+.auth-form .ui-field > [data-slot="label"],
+.auth-form .ui-field > label { display: inline-flex; align-items: baseline; gap: .28em; }
+.required-mark { display: inline; flex: none; color: var(--danger, #df4f4f); font-weight: 900; line-height: 1; }
 .form-hint--terms { color: var(--accent); }
 
 .exam-request-page { min-block-size: calc(100svh - 164px); display: grid; place-items: center; padding-block: 48px; }
