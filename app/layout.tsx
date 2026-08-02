@@ -8,8 +8,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "آزمون‌های HTML و CSS | سنجش دانش وب",
-  description: "آزمون‌های فارسی و تعاملی HTML و CSS با ارزیابی امن سمت سرور",
+  title: "آزمون‌خانه | پلتفرم آزمون و ارزیابی آنلاین",
+  description: "پلتفرم آنلاین آزمون، ارزیابی مهارت و مسیرهای یادگیری برای موضوعات گوناگون؛ با زمان‌سنج امن، بازخورد و نتایج شخصی‌سازی‌شده.",
   other: { google: "notranslate" },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
