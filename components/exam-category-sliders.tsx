@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Autocomplete, Input, Label, ListBox } from "@heroui/react";
+import { Input } from "@heroui/react";
 
 import { ArrowIcon } from "@/components/icons";
 import { NavigationLink } from "@/components/navigation-link";
@@ -35,11 +35,11 @@ function Carousel({ path, exams }: { path: LearningPath; exams: SliderExam[] }) 
 
 function FilterAutocomplete({ label, placeholder, items, selected, onChange }: { label: string; placeholder: string; items: Array<[string, string]>; selected: Set<string>; onChange: (values: Set<string>) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  return <div className="exam-autocomplete-wrap"><Autocomplete aria-label={label} className="exam-autocomplete" fullWidth selectedKey={null} onSelectionChange={(key) => { if (key) onChange(new Set([...selected, String(key)])); }}>
-    <Label>{label}</Label>
-    <Autocomplete.Trigger onClick={() => inputRef.current?.focus()}><Autocomplete.Filter><Input className="exam-autocomplete__input" fullWidth placeholder={placeholder} ref={inputRef} /></Autocomplete.Filter><Autocomplete.Indicator /></Autocomplete.Trigger>
-    <Autocomplete.Popover><ListBox>{items.map(([slug, name]) => <ListBox.Item id={slug} key={slug} textValue={name}>{name}</ListBox.Item>)}</ListBox></Autocomplete.Popover>
-  </Autocomplete>{selected.size > 0 && <div className="exam-autocomplete-tags" aria-label={`${label} انتخاب‌شده`}>{[...selected].map((slug) => <button key={slug} type="button" onClick={() => onChange(new Set([...selected].filter((value) => value !== slug)))}>{items.find(([value]) => value === slug)?.[1]} <span aria-hidden="true">×</span></button>)}</div>}</div>;
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const filtered = items.filter(([, name]) => name.toLocaleLowerCase("fa-IR").includes(query.trim().toLocaleLowerCase("fa-IR")));
+  function select(slug: string) { onChange(new Set([...selected, slug])); setQuery(""); setOpen(false); inputRef.current?.focus(); }
+  return <div className="exam-autocomplete-wrap"><label className="exam-autocomplete" onClick={() => inputRef.current?.focus()}>{label}<Input aria-expanded={open} aria-controls={`options-${label}`} className="exam-autocomplete__input" fullWidth placeholder={placeholder} ref={inputRef} role="combobox" value={query} onChange={(event) => { setQuery(event.target.value); setOpen(true); }} onFocus={() => setOpen(true)} onBlur={() => window.setTimeout(() => setOpen(false), 120)} />{open && <div className="exam-autocomplete__options" id={`options-${label}`} role="listbox">{filtered.length ? filtered.map(([slug, name]) => <button aria-selected={selected.has(slug)} key={slug} onMouseDown={(event) => { event.preventDefault(); select(slug); }} role="option" type="button">{name}{selected.has(slug) && <span>انتخاب‌شده</span>}</button>) : <p>نتیجه‌ای پیدا نشد.</p>}</div>}</label>{selected.size > 0 && <div className="exam-autocomplete-tags" aria-label={`${label} انتخاب‌شده`}>{[...selected].map((slug) => <button key={slug} type="button" onClick={() => onChange(new Set([...selected].filter((value) => value !== slug)))}>{items.find(([value]) => value === slug)?.[1]} <span aria-hidden="true">×</span></button>)}</div>}</div>;
 }
 
 export function ExamCategorySliders({ paths }: { paths: LearningPath[] }) {
