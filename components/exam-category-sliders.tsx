@@ -22,7 +22,18 @@ function Carousel({ path, exams }: { path: LearningPath; exams: SliderExam[] }) 
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const canNavigate = exams.length > 1;
-  const goTo = useCallback((next: number) => { const index = (next + exams.length) % exams.length; setActiveIndex(index); const item = itemRefs.current[index]; item?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "nearest", inline: "start" }); }, [exams.length]);
+  const goTo = useCallback((next: number) => {
+    const index = (next + exams.length) % exams.length;
+    setActiveIndex(index);
+    const item = itemRefs.current[index];
+    const viewport = viewportRef.current;
+    if (!item || !viewport) return;
+    // Scroll only the carousel viewport. Element.scrollIntoView can also move
+    // the page itself during automatic advancement, which is disruptive.
+    const itemBounds = item.getBoundingClientRect();
+    const viewportBounds = viewport.getBoundingClientRect();
+    viewport.scrollBy({ left: itemBounds.left - viewportBounds.left, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [exams.length]);
   useEffect(() => { viewportRef.current?.scrollTo({ left: 0, behavior: "auto" }); }, [path.slug, exams.length]);
   useEffect(() => { if (exams.length < 3 || paused || prefersReducedMotion()) return; const timer = window.setInterval(() => goTo(activeIndex + 1), AUTO_ADVANCE_DELAY); return () => window.clearInterval(timer); }, [activeIndex, exams.length, goTo, paused]);
   if (!exams.length) return <p className="exam-filter-empty">با این فیلتر آزمونی پیدا نشد.</p>;
