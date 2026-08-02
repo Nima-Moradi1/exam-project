@@ -1,9 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { requirePermission } from "@/lib/auth/guards";
+import { privateRobots } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { robots: privateRobots };
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requirePermission("category:read");

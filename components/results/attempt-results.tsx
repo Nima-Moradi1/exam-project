@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent, ReactNode } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronLeft, CircleAlert, Clock3, Download, FileText, GraduationCap, ListChecks, Target, X } from "lucide-react";
 import Link from "next/link";
 import { AppSelect } from "@/components/ui/form-controls";
+import { formatNumber } from "@/lib/exams/presentation";
+import { trackProductEvent } from "@/lib/analytics/events";
 
 type ResultItem = {
   snapshotId: string;
@@ -56,7 +58,7 @@ function AnswerCard({ item }: { item: ResultItem }) {
   </article>;
 }
 
-export function AttemptResults({ result }: { result: { attempt: { scorePercent: number | null; scorePoints: number | null; maxPoints: number; message: string | null; direction: "AUTO" | "LTR" | "RTL" }; items: ResultItem[]; recommendation: Recommendation | null } }) {
+export function AttemptResults({ result }: { result: { attempt: { status: string; scorePercent: number | null; scorePoints: number | null; maxPoints: number; passingScorePercent: number; message: string | null; direction: "AUTO" | "LTR" | "RTL" }; items: ResultItem[]; recommendation: Recommendation | null } }) {
   const [filter, setFilter] = useState<"ALL" | ResultItem["status"]>("ALL");
   const [activeIndex, setActiveIndex] = useState(0);
   const pointerStart = useRef<number | null>(null);
@@ -65,8 +67,10 @@ export function AttemptResults({ result }: { result: { attempt: { scorePercent: 
   const visible = useMemo(() => result.items.filter((item) => filter === "ALL" || item.status === filter), [filter, result.items]);
   const reviewed = counts.CORRECT + counts.INCORRECT + counts.PARTIALLY_CORRECT;
   const scoreTone = score >= 70 ? "success" : score >= 45 ? "warning" : "needs-work";
-  const scoreTitle = score >= 70 ? "عملکرد قابل‌اتکا" : score >= 45 ? "پیشرفت خوبی در راه است" : "نقطهٔ شروع روشن است";
+  const passed = score >= result.attempt.passingScorePercent;
+  const scoreTitle = result.attempt.status === "PENDING_REVIEW" ? "نتیجهٔ نهایی پس از بررسی کامل می‌شود" : passed ? "حدنصاب را با موفقیت به‌دست آوردید" : "این بار به حدنصاب نرسیدید";
   const activeItem = visible[activeIndex];
+  useEffect(() => { trackProductEvent("exam_result_viewed"); }, []);
 
   function moveSlide(direction: number) {
     setActiveIndex((current) => Math.max(0, Math.min(visible.length - 1, current + direction)));
@@ -93,24 +97,24 @@ export function AttemptResults({ result }: { result: { attempt: { scorePercent: 
         <h1 id="result-title">{scoreTitle}</h1>
         <p>{result.attempt.message || "نتیجهٔ آزمون شما آماده است. در ادامه، جزئیات پاسخ‌ها و مسیر پیشنهادی مرور را ببینید."}</p>
         <div className="result-report-hero__chips">
-          <span><Check aria-hidden="true" /> {reviewed} پاسخ بررسی‌شده</span>
-          {counts.UNANSWERED > 0 && <span><CircleAlert aria-hidden="true" /> {counts.UNANSWERED} پاسخ بی‌پاسخ</span>}
+          <span><Check aria-hidden="true" /> {formatNumber(reviewed)} پاسخ بررسی‌شده</span>
+          {counts.UNANSWERED > 0 && <span><CircleAlert aria-hidden="true" /> {formatNumber(counts.UNANSWERED)} پاسخ بی‌پاسخ</span>}
         </div>
       </div>
       <div className="score-display" aria-label={`نمرهٔ شما ${score} درصد`}>
         <div className="score-display__ring" style={{ "--score": `${score * 3.6}deg` } as CSSProperties}>
-          <div><strong>{score}٪</strong><span>نمرهٔ شما</span></div>
+          <div><strong>{formatNumber(score)}٪</strong><span>نمرهٔ شما</span></div>
         </div>
-        <p><b>{result.attempt.scorePoints ?? 0}</b> از {result.attempt.maxPoints} امتیاز</p>
+        <p><b>{formatNumber(result.attempt.scorePoints ?? 0)}</b> از {formatNumber(result.attempt.maxPoints)} امتیاز</p>
       </div>
       <div className="result-report-hero__note"><span>تحلیل عملکرد</span><strong>پاسخ‌ها، نکته‌ها و منابع پیشنهادی بر اساس همین آزمون آماده شده‌اند.</strong></div>
     </section>
 
     <section className="result-analytics" aria-label="خلاصهٔ آماری آزمون">
-      <article className="result-stat result-stat--correct"><span className="result-stat__icon"><Check /></span><div><span>پاسخ درست</span><strong>{counts.CORRECT}</strong><small>پاسخ دقیق و کامل</small></div></article>
-      <article className="result-stat result-stat--incorrect"><span className="result-stat__icon"><X /></span><div><span>پاسخ نادرست</span><strong>{counts.INCORRECT}</strong><small>نیازمند مرور بیشتر</small></div></article>
-      <article className="result-stat result-stat--partial"><span className="result-stat__icon"><Target /></span><div><span>نیمه‌درست</span><strong>{counts.PARTIALLY_CORRECT}</strong><small>نزدیک به پاسخ کامل</small></div></article>
-      <article className="result-stat result-stat--empty"><span className="result-stat__icon"><CircleAlert /></span><div><span>بی‌پاسخ</span><strong>{counts.UNANSWERED + counts.PENDING_REVIEW}</strong><small>{counts.PENDING_REVIEW ? `${counts.PENDING_REVIEW} مورد در انتظار بررسی` : "فرصت مرور دوباره"}</small></div></article>
+      <article className="result-stat result-stat--correct"><span className="result-stat__icon"><Check /></span><div><span>پاسخ درست</span><strong>{formatNumber(counts.CORRECT)}</strong><small>پاسخ دقیق و کامل</small></div></article>
+      <article className="result-stat result-stat--incorrect"><span className="result-stat__icon"><X /></span><div><span>پاسخ نادرست</span><strong>{formatNumber(counts.INCORRECT)}</strong><small>نیازمند مرور بیشتر</small></div></article>
+      <article className="result-stat result-stat--partial"><span className="result-stat__icon"><Target /></span><div><span>نیمه‌درست</span><strong>{formatNumber(counts.PARTIALLY_CORRECT)}</strong><small>نزدیک به پاسخ کامل</small></div></article>
+      <article className="result-stat result-stat--empty"><span className="result-stat__icon"><CircleAlert /></span><div><span>بی‌پاسخ یا در انتظار</span><strong>{formatNumber(counts.UNANSWERED + counts.PENDING_REVIEW)}</strong><small>{counts.PENDING_REVIEW ? `${formatNumber(counts.PENDING_REVIEW)} مورد در انتظار بررسی دستی` : "فرصت مرور دوباره"}</small></div></article>
     </section>
 
     {result.recommendation && <section className="recommendation-report" aria-labelledby="recommendations-title">

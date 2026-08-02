@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 
 import { startAttempt } from "@/lib/attempts/service";
 import { startAttemptSchema } from "@/lib/attempts/schemas";
-import { apiError, requireJson } from "@/lib/security/request";
+import { apiError, rateLimitRequest, requireJson } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const limited = await rateLimitRequest(request, "attempt-start", 15, 60 * 60_000);
+  if (limited) return limited;
   try {
     requireJson(request);
     const input = startAttemptSchema.parse(await request.json());

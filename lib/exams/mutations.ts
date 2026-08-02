@@ -1,7 +1,7 @@
 "use server";
 
-import { and, asc, eq, isNull } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { and, asc, eq, isNull, ne } from "drizzle-orm";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 
 import { writeAuditLog } from "@/lib/audit/service";
@@ -11,10 +11,12 @@ import { categories, examOutlineItems, exams, questionAcceptedAnswers, questionO
 import { normalizeDescriptiveAnswer } from "@/lib/grading.server";
 import { getQuestionWithAnswers } from "./queries";
 import { examInputSchema, questionInputSchema } from "./schemas";
+import { inspectExamContent } from "./content-quality";
 
 type MutationResult = { ok: true; id?: string } | { ok: false; code: string; message: string };
 
 function invalidateExam(examId?: string, slug?: string) {
+  updateTag("public-exams");
   revalidatePath("/");
   revalidatePath("/admin/exams", "layout");
   if (examId) revalidatePath(`/admin/exams/${examId}`, "layout");
@@ -51,12 +53,14 @@ export async function validateExamForPublication(examId: string) {
   const db = getDb();
   const exam = await db.select().from(exams).where(eq(exams.id, examId)).limit(1).then((rows) => rows[0]);
   if (!exam) return ["آزمون پیدا نشد."];
-  const failures: string[] = [];
+  const failures: string[] = inspectExamContent(exam);
   if (!exam.categoryId || exam.durationSeconds < 60 || !exam.title.trim() || !exam.slug.trim()) failures.push("اطلاعات پایهٔ آزمون ناقص است.");
   const questionRows = await db.select().from(questions).where(and(eq(questions.examId, examId), isNull(questions.deletedAt)));
   if (!questionRows.length) failures.push("آزمون حداقل به یک پرسش نیاز دارد.");
   if (!questionRows.reduce((total, question) => total + question.points, 0)) failures.push("جمع امتیاز پرسش‌ها باید بیشتر از صفر باشد.");
   const category = await db.select({ slug: categories.slug }).from(categories).where(eq(categories.id, exam.categoryId)).limit(1).then((rows) => rows[0]);
+  const duplicatedCopy = await db.select({ id: exams.id }).from(exams).where(and(ne(exams.id, exam.id), eq(exams.shortDescription, exam.shortDescription), isNull(exams.deletedAt))).limit(1);
+  if (duplicatedCopy.length) failures.push("توضیح کوتاهٔ این آزمون با آزمون دیگری یکسان است.");
   if (category?.slug === "full") {
     const bySkill = new Map<string, typeof questionRows>();
     for (const question of questionRows) {
@@ -89,15 +93,39 @@ export async function publishExam(examId: string): Promise<MutationResult> {
   const failures = await validateExamForPublication(examId);
   if (failures.length) return { ok: false, code: "VALIDATION_ERROR", message: failures.join(" ") };
   const db = getDb();
+  const current = await db.select({ status: exams.status, approvedAt: exams.approvedAt }).from(exams).where(eq(exams.id, examId)).limit(1).then((rows) => rows[0]);
+  if (current?.status !== "APPROVED" || !current.approvedAt) return { ok: false, code: "REVIEW_REQUIRED", message: "آزمون باید پیش از انتشار توسط بازبین تأیید شود." };
   const exam = await db.update(exams).set({ status: "PUBLISHED", publishedAt: new Date(), updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(exams.id, examId)).returning({ slug: exams.slug });
   await writeAuditLog({ actorUserId: actor.id, action: "PUBLISH", entityType: "exam", entityId: examId });
   invalidateExam(examId, exam[0]?.slug);
   return { ok: true, id: examId };
 }
 
+export async function requestExamReview(examId: string): Promise<MutationResult> {
+  const actor = await requirePermission("exam:update");
+  const failures = await validateExamForPublication(examId);
+  if (failures.length) return { ok: false, code: "VALIDATION_ERROR", message: failures.join(" ") };
+  await getDb().update(exams).set({ status: "IN_REVIEW", approvedAt: null, approvedByUserId: null, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(exams.id, examId));
+  await writeAuditLog({ actorUserId: actor.id, action: "STATUS_CHANGE", entityType: "exam", entityId: examId, metadata: { status: "IN_REVIEW" } });
+  invalidateExam(examId);
+  return { ok: true, id: examId };
+}
+
+export async function approveExam(examId: string): Promise<MutationResult> {
+  const actor = await requirePermission("exam:publish");
+  const failures = await validateExamForPublication(examId);
+  if (failures.length) return { ok: false, code: "VALIDATION_ERROR", message: failures.join(" ") };
+  const current = await getDb().select({ status: exams.status }).from(exams).where(eq(exams.id, examId)).limit(1).then((rows) => rows[0]);
+  if (current?.status !== "IN_REVIEW") return { ok: false, code: "CONFLICT", message: "فقط آزمون در حال بررسی قابل تأیید است." };
+  await getDb().update(exams).set({ status: "APPROVED", approvedAt: new Date(), approvedByUserId: actor.id, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(exams.id, examId));
+  await writeAuditLog({ actorUserId: actor.id, action: "STATUS_CHANGE", entityType: "exam", entityId: examId, metadata: { status: "APPROVED" } });
+  invalidateExam(examId);
+  return { ok: true, id: examId };
+}
+
 export async function unpublishExam(examId: string): Promise<MutationResult> {
   const actor = await requirePermission("exam:publish");
-  const exam = await getDb().update(exams).set({ status: "DRAFT", updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(exams.id, examId)).returning({ slug: exams.slug });
+  const exam = await getDb().update(exams).set({ status: "APPROVED", updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(exams.id, examId)).returning({ slug: exams.slug });
   await writeAuditLog({ actorUserId: actor.id, action: "UNPUBLISH", entityType: "exam", entityId: examId });
   invalidateExam(examId, exam[0]?.slug);
   return { ok: true, id: examId };

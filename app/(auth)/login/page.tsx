@@ -18,11 +18,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <h1 id="login-title">{isAdminLogin ? "ورود به پنل مدیریت" : "ورود به آزمون‌خانه"}</h1>
         <p>{isAdminLogin ? "با حساب دارای دسترسی مدیریتی وارد شوید تا به داشبورد مدیریت آزمون‌خانه منتقل شوید." : "برای شروع، ادامه‌دادن و مشاهدهٔ نتیجه‌ها وارد حساب خود شوید."}</p>
         <LoginForm googleEnabled={isAdminLogin ? false : googleEnabled} adminLogin={isAdminLogin} />
-        {isAdminLogin ? (
-          <div className="auth-footer auth-footer--admin"><span>کاربر عادی هستید؟</span><Link href="/login">ورود به حساب کاربری</Link></div>
-        ) : (
-          <div className="auth-footer auth-footer--split"><Link href="/login?callbackUrl=%2Fadmin">ورود مدیران</Link><span>حساب ندارید؟ <Link href="/signup">ثبت‌نام کنید</Link></span></div>
-        )}
+        {isAdminLogin ? <div className="auth-footer auth-footer--admin"><span>کاربر عادی هستید؟</span><Link href="/login">ورود به حساب کاربری</Link></div> : <div className="auth-footer"><span>حساب ندارید؟ <Link href="/signup">ثبت‌نام کنید</Link></span></div>}
       </section>
     </main>
   );

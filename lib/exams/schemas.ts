@@ -7,6 +7,7 @@ export const examInputSchema = z.object({
   shortDescription: z.string().trim().min(10).max(500),
   description: z.string().trim().min(10).max(10_000),
   instructions: z.string().trim().min(1).max(10_000),
+  learningObjectives: z.array(z.string().trim().min(3).max(300)).min(1).max(12).default([]),
   locale: z.enum(["fa", "en"]),
   direction: z.enum(["AUTO", "LTR", "RTL"]),
   difficulty: z.enum(["BEGINNER", "ELEMENTARY", "INTERMEDIATE", "UPPER_INTERMEDIATE", "ADVANCED", "EXPERT"]),

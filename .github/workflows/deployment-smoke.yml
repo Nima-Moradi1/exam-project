@@ -1,0 +1,26 @@
+name: Deployment readiness
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: Deployment origin to verify
+        required: true
+        default: https://full-exam-project.vercel.app
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm deploy:verify
+        env:
+          SMOKE_TEST_ORIGIN: ${{ inputs.origin }}

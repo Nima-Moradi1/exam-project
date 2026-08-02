@@ -1,4 +1,4 @@
-import { type AnyPgColumn, boolean, index, integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, boolean, index, integer, jsonb, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 import { categories } from "./categories";
 import { antiCheatMode, examDifficulty, examDirection, examStatus } from "./enums";
@@ -13,6 +13,7 @@ export const exams = pgTable("exams", {
   shortDescription: varchar("short_description", { length: 500 }).notNull(),
   description: text("description").notNull(),
   instructions: text("instructions").notNull(),
+  learningObjectives: jsonb("learning_objectives").notNull().$type<string[]>().default([]),
   locale: varchar("locale", { length: 16 }).notNull().default("fa"),
   direction: examDirection("direction").notNull().default("AUTO"),
   difficulty: examDifficulty("difficulty").notNull().default("INTERMEDIATE"),
@@ -29,6 +30,9 @@ export const exams = pgTable("exams", {
   createdByUserId: uuid("created_by_user_id").references(() => users.id, { onDelete: "restrict" }),
   updatedByUserId: uuid("updated_by_user_id").references(() => users.id, { onDelete: "restrict" }),
   publishedAt: timestamp("published_at", { withTimezone: true }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  approvedByUserId: uuid("approved_by_user_id").references(() => users.id, { onDelete: "restrict" }),
+  scheduledPublishAt: timestamp("scheduled_publish_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   deletedAt: timestamp("deleted_at", { withTimezone: true })
