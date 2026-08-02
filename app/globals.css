@@ -2056,6 +2056,27 @@ button:not(:disabled) {
   background: var(--green);
 }
 
+.exam-discovery { display: grid; gap: 24px; }
+.exam-path-tabs, .exam-filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.exam-path-tabs { padding: 6px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-soft); }
+.exam-path-tabs button { flex: 1 1 180px; min-block-size: 42px; padding: 8px 15px; color: var(--text-soft); border: 1px solid transparent; border-radius: 10px; background: transparent; font-size: .8rem; font-weight: 900; }
+.exam-path-tabs button.is-active { color: #fff; border-color: var(--green); background: var(--green); box-shadow: var(--shadow-sm); }
+.exam-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; padding: 17px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface-soft) 68%, var(--surface)); }
+.exam-filters > div { display: grid; gap: 8px; }
+.exam-filters > div > span { color: var(--text-soft); font-size: .68rem; font-weight: 900; }
+.exam-filter-chips button, .exam-topic-chip { min-block-size: 29px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-raised); color: var(--text-soft); font-size: .68rem; font-weight: 850; white-space: nowrap; }
+.exam-filter-chips button.is-active { color: #fff; border-color: var(--green); background: var(--green); }
+.exam-topic-chip--ocean { color: #2c7da0; border-color: #b7dce9; background: #e8f5fa; }.exam-topic-chip--violet { color: #7656a7; border-color: #d7c8ec; background: #f2ecfb; }.exam-topic-chip--coral { color: #bd5938; border-color: #f0c9b9; background: #fff0e8; }.exam-topic-chip--gold { color: #987022; border-color: #edd69d; background: #fff6dd; }.exam-topic-chip--mint { color: #367b64; border-color: #bcded0; background: #e8f5ee; }.exam-topic-chip--plum { color: #994d76; border-color: #ecc9dc; background: #fcecf4; }
+.exam-topic-chip--ocean.is-active { color: #fff; border-color: #2c7da0; background: #2c7da0; }.exam-topic-chip--violet.is-active { color: #fff; border-color: #7656a7; background: #7656a7; }.exam-topic-chip--coral.is-active { color: #fff; border-color: #bd5938; background: #bd5938; }.exam-topic-chip--gold.is-active { color: #fff; border-color: #987022; background: #987022; }.exam-topic-chip--mint.is-active { color: #fff; border-color: #367b64; background: #367b64; }.exam-topic-chip--plum.is-active { color: #fff; border-color: #994d76; background: #994d76; }
+.exam-filter-empty { margin: 0; padding: 36px; border: 1px dashed var(--line-strong); border-radius: 16px; color: var(--text-soft); text-align: center; }
+
+/* Compact discovery cards keep the carousel scan-friendly. */
+.hub-exam-card { min-block-size: 154px; padding: 17px 18px; border-block-start-width: 3px; border-radius: 15px; }
+.hub-exam-card::before { inset: -38px -28px auto auto; inline-size: 78px; block-size: 78px; border-width: 12px; }
+.hub-exam-card h4 { margin: 8px 0 5px; font-size: 1rem; }.hub-exam-card > p { display: -webkit-box; max-inline-size: 100%; overflow: hidden; font-size: .72rem; line-height: 1.75; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }.hub-exam-card > div { gap: 9px; padding-block-start: 12px; }.hub-exam-card > div a { padding: 6px 8px; font-size: .66rem; }.hub-exam-card > div > span { font-size: .63rem; }
+.exam-category-slider__track { grid-auto-columns: minmax(245px, calc(33.333% - 14px)); gap: 14px; }
+.exam-category-slider--single .exam-category-slider__track { grid-auto-columns: minmax(245px, 330px); }
+
 @keyframes card-in {
   from { opacity: 0; transform: translateY(8px); }
 }
@@ -3457,3 +3478,4 @@ select { appearance: none; padding-inline-end: 42px !important; background-image
 @media (max-width: 760px) { .category-manager__toolbar { align-items: stretch; flex-direction: column; } .category-filters { align-items: stretch; } .category-filters label { flex-basis: 100%; } .category-filters button, .category-create-trigger { inline-size: 100%; } .category-filters__reset { justify-content: center; } .category-data-grid .admin-data-grid__viewport { max-block-size: 70vh; } }
 @media (max-width: 640px) { .profile-card__header { align-items: flex-start; gap: 13px; } .profile-avatar { inline-size: 48px; block-size: 48px; border-radius: 16px; font-size: 1.2rem; } .profile-details, .account-actions { grid-template-columns: 1fr; } .profile-details__bio { grid-column: auto; } .outline-card__header { padding: 23px 19px 19px; } .outline-list li { padding: 14px 19px; } .admin-modal-backdrop { align-items: end; padding: 10px; } .admin-modal { border-end-start-radius: 16px; border-end-end-radius: 16px; } .admin-modal__heading { padding: 20px 19px 16px; } .admin-modal .admin-form { grid-template-columns: 1fr; padding: 19px; } .admin-modal__actions { flex-direction: column-reverse; } .admin-modal__actions button { inline-size: 100%; } }
 @media (max-width: 640px) { .attempt-history-card { padding: 21px; } .attempt-history-summary { gap: 7px; } .attempt-history-summary div { min-block-size: 66px; padding: 9px; } .attempt-history-summary strong { font-size: 1rem; } .attempt-history__item { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; padding: 11px; } .attempt-history__score { grid-column: 2; grid-row: 2; text-align: start; } .attempt-history__link { grid-column: 3; grid-row: 1 / 3; align-self: center; padding: 6px; font-size: 0; } .attempt-history__link b { font-size: 1.1rem; } .attempt-history__status { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+@media (max-width: 760px) { .exam-filters { grid-template-columns: 1fr; gap: 16px; padding: 14px; }.exam-path-tabs { display: grid; grid-template-columns: 1fr 1fr; }.exam-path-tabs button { min-inline-size: 0; }.exam-category-slider__heading { align-items: flex-start; flex-direction: column; margin-block-end: 12px; }.exam-category-slider__tools { inline-size: 100%; justify-content: space-between; }.exam-category-slider__track, .exam-category-slider--single .exam-category-slider__track { grid-auto-columns: minmax(0, 84vw); gap: 12px; }.hub-exam-card { min-block-size: 148px; padding: 16px; }.exam-category-slider__dots { margin-block-start: 11px; }.exam-filter-chips { flex-wrap: nowrap; max-inline-size: calc(100vw - 56px); overflow-x: auto; padding-block-end: 3px; scrollbar-width: none; }.exam-filter-chips::-webkit-scrollbar { display: none; } }

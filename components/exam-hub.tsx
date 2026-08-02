@@ -1,5 +1,5 @@
 import { ArrowIcon, ClockIcon, CodeIcon, ListIcon, ShieldIcon } from "@/components/icons";
-import { ExamCategorySliders, type ExamCategory } from "@/components/exam-category-sliders";
+import { ExamCategorySliders, type LearningPath } from "@/components/exam-category-sliders";
 import { NavigationLink } from "@/components/navigation-link";
 import { getExamCardTheme } from "@/lib/exams/presentation";
 
@@ -22,26 +22,30 @@ const fallbackExams = [
   }
 ] as const;
 
-type DiscoveryExam = { slug: string; title: string; categoryName: string; categorySlug: string; shortDescription: string; durationSeconds: number; difficulty: string };
-type HubExam = ExamCategory["exams"][number] & { category: string };
+type DiscoveryExam = { slug: string; title: string; categoryName: string; categorySlug: string; levelName: string | null; levelSlug: string | null; pathName: string | null; pathSlug: string | null; shortDescription: string; durationSeconds: number; difficulty: string };
+type HubExam = LearningPath["exams"][number];
 
 export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ name: string; slug: string; description: string | null }>; publishedExams: DiscoveryExam[] } }) {
   const exams: HubExam[] = discovery?.publishedExams.map((exam) => ({
     href: `/exams/${exam.slug}`,
     label: exam.title,
-    category: exam.categoryName,
+    category: exam.categoryName, categorySlug: exam.categorySlug,
+    level: exam.levelName ?? "عمومی", levelSlug: exam.levelSlug ?? "general",
     description: exam.shortDescription,
     detail: `${Math.ceil(exam.durationSeconds / 60)} دقیقه · ${exam.difficulty}`,
     accent: getExamCardTheme(exam.slug, exam.difficulty)
-  })) ?? fallbackExams.map((exam) => ({ ...exam }));
-  const examCategories = exams.reduce<ExamCategory[]>((categories, exam) => {
-    const category = categories.find((entry) => entry.name === exam.category);
-    if (category) {
-      category.exams.push(exam);
+  })) ?? fallbackExams.map((exam) => ({ ...exam, categorySlug: exam.category === "مبانی ساخت صفحات وب" ? "html" : "css", level: "Frontend", levelSlug: "frontend" }));
+  const learningPaths = exams.reduce<LearningPath[]>((paths, exam, index) => {
+    const source = discovery?.publishedExams[index];
+    const slug = source?.pathSlug ?? "software-engineering";
+    const name = source?.pathName ?? "Software Engineering";
+    const path = paths.find((entry) => entry.slug === slug);
+    if (path) {
+      path.exams.push(exam);
     } else {
-      categories.push({ name: exam.category, exams: [exam] });
+      paths.push({ name, slug, exams: [exam] });
     }
-    return categories;
+    return paths;
   }, []);
   return (
     <main className="exam-hub" id="main-content">
@@ -79,7 +83,7 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
 
       <section className="hub-exams page-shell" id="exams" aria-labelledby="exams-title">
         <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های آماده</span><h2 id="exams-title">آزمون مناسب سطح خودت را انتخاب کن</h2></div><p>پیش از شروع، زمان، سطح و موضوع هر آزمون را با خیال راحت بررسی کن.</p></div>
-        <ExamCategorySliders categories={examCategories} />
+        <ExamCategorySliders paths={learningPaths} />
       </section>
     </main>
   );

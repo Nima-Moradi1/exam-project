@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { alias, and, asc, eq, isNull } from "drizzle-orm";
 
 import { getDb } from "@/lib/db";
 import { categories, examOutlineItems, exams, questionAcceptedAnswers, questionOptions, questionTopics, questions } from "@/lib/db/schema";
@@ -16,9 +16,11 @@ export async function getPublicExamBySlug(slug: string) {
 
 export async function getPublicHomeDiscovery() {
   const db = getDb();
+  const parentCategory = alias(categories, "home_parent_category");
+  const pathCategory = alias(categories, "home_path_category");
   const [rootCategories, publishedExams] = await Promise.all([
     db.select({ id: categories.id, name: categories.name, slug: categories.slug, description: categories.description, locale: categories.locale, direction: categories.direction }).from(categories).where(and(isNull(categories.parentId), eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder)).limit(6),
-    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name, categorySlug: categories.slug }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(18)
+    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name, categorySlug: categories.slug, levelName: parentCategory.name, levelSlug: parentCategory.slug, pathName: pathCategory.name, pathSlug: pathCategory.slug }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).leftJoin(parentCategory, eq(categories.parentId, parentCategory.id)).leftJoin(pathCategory, eq(parentCategory.parentId, pathCategory.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(48)
   ]);
   return { rootCategories, publishedExams };
 }
