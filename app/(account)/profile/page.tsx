@@ -46,6 +46,7 @@ export default async function ProfilePage() {
           <Link className="profile-action profile-action--primary" href="/profile/edit"><span>ویرایش پروفایل</span><small>نام، معرفی و زبان</small><b aria-hidden="true">←</b></Link>
           <Link className="profile-action" href="/profile/security"><span>امنیت حساب</span><small>رمز عبور و ورود</small><b aria-hidden="true">←</b></Link>
           <Link className="profile-action" href="/profile/exams"><span>تاریخچهٔ آزمون‌ها</span><small>نتایج و تلاش‌ها</small><b aria-hidden="true">←</b></Link>
+          <Link className="profile-action" href="/profile/exam-requests"><span>درخواست‌های آزمون</span><small>پیگیری پیشنهادهای ارسال‌شده</small><b aria-hidden="true">←</b></Link>
         </nav>
       </section>
     </main>

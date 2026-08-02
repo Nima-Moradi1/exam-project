@@ -9,7 +9,8 @@ import { NavigationLink } from "@/components/navigation-link";
 const publicNavigationItems = [
   { href: "/", label: "خانه" },
   { href: "/#paths", label: "مسیرهای یادگیری" },
-  { href: "/#exams", label: "آزمون‌ها" }
+  { href: "/#exams", label: "آزمون‌ها" },
+  { href: "/exam-request", label: "درخواست آزمون" }
 ] as const;
 
 export function SiteNavigation() {

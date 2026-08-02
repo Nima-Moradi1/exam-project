@@ -3,6 +3,7 @@ export * from "./attempts";
 export * from "./categories";
 export * from "./enums";
 export * from "./exams";
+export * from "./exam-requests";
 export * from "./media";
 export * from "./questions";
 export * from "./resources";
