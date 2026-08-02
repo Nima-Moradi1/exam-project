@@ -7,7 +7,7 @@ import type { ComponentProps } from "react";
 export function ThemeProvider({ children, ...props }: ComponentProps<typeof NextThemesProvider>) {
   return (
     <SessionProvider refetchOnWindowFocus={false}>
-      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange {...props}>
+      <NextThemesProvider attribute="class" defaultTheme="system" enableSystem {...props}>
         {children}
       </NextThemesProvider>
     </SessionProvider>

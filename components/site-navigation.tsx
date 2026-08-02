@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 
 import { NavigationLink } from "@/components/navigation-link";
 
@@ -14,7 +15,9 @@ const publicNavigationItems = [
 export function SiteNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const canManage = ["CONTENT_MANAGER", "ADMIN", "SUPER_ADMIN"].includes(session?.user?.role ?? "");
+  const showMobileAccountAction = status === "authenticated" || (pathname !== "/login" && pathname !== "/signup");
   const navigationItems = status === "authenticated"
     ? [...publicNavigationItems, { href: "/profile/exams", label: "نتایج من" }, ...(canManage ? [{ href: "/admin", label: "مدیریت" }] : [])]
     : publicNavigationItems;
@@ -27,9 +30,9 @@ export function SiteNavigation() {
       </button>
       <nav className={`site-nav${isOpen ? " is-open" : ""}`} id="primary-navigation" aria-label="ناوبری اصلی">
         {navigationItems.map((item) => <NavigationLink key={item.href} href={item.href} onNavigate={() => setIsOpen(false)}>{item.label}</NavigationLink>)}
-        <div className="site-nav__mobile-actions">
+        {showMobileAccountAction && <div className="site-nav__mobile-actions">
           <NavigationLink className="primary-button" href={status === "authenticated" ? "/profile" : "/login"} onNavigate={() => setIsOpen(false)}>{status === "authenticated" ? "حساب کاربری" : "ورود یا ثبت‌نام"}</NavigationLink>
-        </div>
+        </div>}
       </nav>
     </div>
   );

@@ -1,4 +1,5 @@
 import { ArrowIcon, ClockIcon, CodeIcon, ListIcon, ShieldIcon } from "@/components/icons";
+import { ExamCategorySliders, type ExamCategory } from "@/components/exam-category-sliders";
 import { NavigationLink } from "@/components/navigation-link";
 import { getExamCardTheme } from "@/lib/exams/presentation";
 
@@ -22,16 +23,26 @@ const fallbackExams = [
 ] as const;
 
 type DiscoveryExam = { slug: string; title: string; categoryName: string; categorySlug: string; shortDescription: string; durationSeconds: number; difficulty: string };
+type HubExam = ExamCategory["exams"][number] & { category: string };
 
 export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ name: string; slug: string; description: string | null }>; publishedExams: DiscoveryExam[] } }) {
-  const exams = discovery?.publishedExams.map((exam) => ({
+  const exams: HubExam[] = discovery?.publishedExams.map((exam) => ({
     href: `/exams/${exam.slug}`,
     label: exam.title,
     category: exam.categoryName,
     description: exam.shortDescription,
     detail: `${Math.ceil(exam.durationSeconds / 60)} دقیقه · ${exam.difficulty}`,
     accent: getExamCardTheme(exam.slug, exam.difficulty)
-  })) ?? fallbackExams;
+  })) ?? fallbackExams.map((exam) => ({ ...exam }));
+  const examCategories = exams.reduce<ExamCategory[]>((categories, exam) => {
+    const category = categories.find((entry) => entry.name === exam.category);
+    if (category) {
+      category.exams.push(exam);
+    } else {
+      categories.push({ name: exam.category, exams: [exam] });
+    }
+    return categories;
+  }, []);
   return (
     <main className="exam-hub" id="main-content">
       <section className="hub-hero page-shell" aria-labelledby="hub-title">
@@ -68,16 +79,7 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
 
       <section className="hub-exams page-shell" id="exams" aria-labelledby="exams-title">
         <div className="hub-section-heading"><div><span className="eyebrow"><i /> آزمون‌های آماده</span><h2 id="exams-title">آزمون مناسب سطح خودت را انتخاب کن</h2></div><p>پیش از شروع، زمان، سطح و موضوع هر آزمون را با خیال راحت بررسی کن.</p></div>
-        <div className="hub-exam-grid">
-          {exams.map((exam) => (
-            <article className={`hub-exam-card exam-card--${exam.accent}`} key={exam.href}>
-              <span className="hub-exam-card__label">{exam.category}</span>
-              <h3>{exam.label}</h3>
-              <p>{exam.description}</p>
-              <div><span>{exam.detail}</span><NavigationLink href={exam.href} aria-label={`مشاهدهٔ ${exam.label}`}>مشاهده و شروع <ArrowIcon /></NavigationLink></div>
-            </article>
-          ))}
-        </div>
+        <ExamCategorySliders categories={examCategories} />
       </section>
     </main>
   );

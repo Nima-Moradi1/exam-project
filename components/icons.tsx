@@ -39,6 +39,17 @@ export function MoonIcon(props: IconProps) {
   );
 }
 
+export function GoogleIcon(props: IconProps) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path fill="#4285F4" d="M21.8 12.23c0-.71-.06-1.4-.18-2.05H12v3.88h5.5a4.7 4.7 0 0 1-2.04 3.08v2.52h3.31c1.94-1.78 3.03-4.4 3.03-7.43Z" />
+      <path fill="#34A853" d="M12 22c2.75 0 5.06-.91 6.75-2.34l-3.31-2.52c-.92.62-2.1.99-3.44.99-2.65 0-4.9-1.79-5.7-4.19H2.88v2.6A10.2 10.2 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.3 13.94A6.13 6.13 0 0 1 6 12c0-.67.12-1.32.3-1.94v-2.6H2.88A10 10 0 0 0 1.8 12c0 1.61.39 3.13 1.08 4.54l3.42-2.6Z" />
+      <path fill="#EA4335" d="M12 5.87c1.5 0 2.84.52 3.9 1.53l2.92-2.92C17.05 2.84 14.75 2 12 2a10.2 10.2 0 0 0-9.12 5.46l3.42 2.6C7.1 7.66 9.35 5.87 12 5.87Z" />
+    </svg>
+  );
+}
+
 export function ArrowIcon(props: IconProps) {
   return (
     <svg {...base} {...props}>
