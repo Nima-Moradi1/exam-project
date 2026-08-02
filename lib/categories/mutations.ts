@@ -75,10 +75,10 @@ export async function reorderCategory(input: unknown): Promise<MutationResult> {
   const index = siblings.findIndex((item) => item.id === current.id);
   const target = siblings[index + (parsed.data.direction === "up" ? -1 : 1)];
   if (!target) return { ok: true, id: current.id };
-  await db.transaction(async (transaction) => {
-    await transaction.update(categories).set({ sortOrder: target.sortOrder, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(categories.id, current.id));
-    await transaction.update(categories).set({ sortOrder: current.sortOrder, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(categories.id, target.id));
-  });
+  await db.batch([
+    db.update(categories).set({ sortOrder: target.sortOrder, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(categories.id, current.id)),
+    db.update(categories).set({ sortOrder: current.sortOrder, updatedByUserId: actor.id, updatedAt: new Date() }).where(eq(categories.id, target.id))
+  ]);
   await writeAuditLog({ actorUserId: actor.id, action: "UPDATE", entityType: "category", entityId: current.id, metadata: { reorder: parsed.data.direction } });
   invalidateCategories();
   return { ok: true, id: current.id };

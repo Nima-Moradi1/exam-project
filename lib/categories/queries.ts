@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, ilike, isNotNull, isNull, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { getDb } from "@/lib/db";
@@ -74,15 +74,27 @@ export async function getCategoryTree({ includeHidden = false }: { includeHidden
   return roots;
 }
 
-export async function getAdminCategoryPage({ limit, offset }: { limit: number; offset: number }) {
+export type AdminCategoryFilters = {
+  query?: string;
+  kind?: "all" | "root" | "child";
+};
+
+export async function getAdminCategoryPage({ limit, offset, filters = {} }: { limit: number; offset: number; filters?: AdminCategoryFilters }) {
   const parentCategories = alias(categories, "admin_parent_categories");
   const db = getDb();
+  const query = filters.query?.trim();
+  const hierarchyCondition = filters.kind === "root" ? isNull(categories.parentId) : filters.kind === "child" ? isNotNull(categories.parentId) : undefined;
+  const where = and(
+    isNull(categories.deletedAt),
+    hierarchyCondition,
+    query ? or(ilike(categories.name, `%${query}%`), ilike(categories.slug, `%${query}%`)) : undefined
+  );
   const [items, totals] = await Promise.all([
     db.select({
       id: categories.id, parentId: categories.parentId, name: categories.name, slug: categories.slug,
       locale: categories.locale, direction: categories.direction, status: categories.status, parentName: parentCategories.name
-    }).from(categories).leftJoin(parentCategories, eq(categories.parentId, parentCategories.id)).where(isNull(categories.deletedAt)).orderBy(asc(categories.sortOrder), asc(categories.name)).limit(limit).offset(offset),
-    db.select({ value: count() }).from(categories).where(isNull(categories.deletedAt))
+    }).from(categories).leftJoin(parentCategories, eq(categories.parentId, parentCategories.id)).where(where).orderBy(asc(categories.sortOrder), asc(categories.name)).limit(limit).offset(offset),
+    db.select({ value: count() }).from(categories).where(where)
   ]);
   return { items, total: Number(totals[0]?.value ?? 0) };
 }
