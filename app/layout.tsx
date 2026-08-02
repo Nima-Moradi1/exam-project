@@ -10,6 +10,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "آزمون‌های HTML و CSS | سنجش دانش وب",
   description: "آزمون‌های فارسی و تعاملی HTML و CSS با ارزیابی امن سمت سرور",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: "/icon.svg",
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }]
+  },
   robots: {
     index: false,
     follow: false
