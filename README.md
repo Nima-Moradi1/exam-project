@@ -1,5 +1,13 @@
 # Exam Platform
 
+## Production origin and release gate
+
+The canonical production origin is `https://full-exam-project.vercel.app`. The former `full-exam-website.vercel.app` host and preview `*.vercel.app` hosts are redirected with HTTP 308 in production. Set `NEXT_PUBLIC_APP_URL` to the canonical origin in Production; local development may use `http://localhost:3000`.
+
+Every production promotion must follow [the migration procedure](docs/migrations.md): run `pnpm db:migrate`, then `pnpm db:health`, deploy the candidate, and run `pnpm deploy:verify`. The readiness check verifies the committed Drizzle migration table plus the exact plural `users`, `accounts`, `sessions`, and `verification_tokens` relations used by Auth.js without returning database details.
+
+Quality commands include `pnpm check`, `pnpm test:e2e`, `pnpm test:a11y`, `pnpm analyze`, and `pnpm perf:lhci`. Product analytics fields and privacy boundaries are documented in [docs/analytics.md](docs/analytics.md).
+
 یک پلتفرم آزمون تمام‌پشته با Next.js App Router، PostgreSQL/Neon، Drizzle و Auth.js. رابط کاربری فارسی‌محور است، اما هر آزمون به‌صورت مستقل RTL یا LTR رندر می‌شود. پاسخ‌نامه‌ها و زمان آزمون فقط روی سرور کنترل می‌شوند.
 
 ## قابلیت‌ها

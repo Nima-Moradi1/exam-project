@@ -24,6 +24,7 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 blob-report/
+.lighthouseci/
 
 # Private material and credentials
 private/
