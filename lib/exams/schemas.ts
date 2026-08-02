@@ -20,7 +20,13 @@ export const examInputSchema = z.object({
   antiCheatMode: z.enum(["OFF", "WARN", "STRICT"]).default("WARN")
 });
 
-const baseSettings = z.object({ placeholder: z.string().max(160).optional() });
+const skillSettings = {
+  skill: z.enum(["READING", "LISTENING", "WRITING", "SPEAKING"]).optional(),
+  audioUrl: z.string().url().optional(),
+  audioScript: z.string().trim().max(10_000).optional(),
+  responseMode: z.enum(["TEXT", "AUDIO"]).optional()
+};
+const baseSettings = z.object({ placeholder: z.string().max(160).optional(), ...skillSettings });
 export const questionSettingsSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("SINGLE_CHOICE"), settings: baseSettings }),
   z.object({ type: z.literal("DROPDOWN"), settings: baseSettings }),
@@ -28,9 +34,9 @@ export const questionSettingsSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("MULTIPLE_CHOICE"), settings: baseSettings.extend({ minimumSelections: z.number().int().min(0).optional(), maximumSelections: z.number().int().positive().optional(), partialCredit: z.boolean().optional() }) }),
   z.object({ type: z.literal("SHORT_TEXT"), settings: baseSettings.extend({ caseSensitive: z.boolean().optional(), normalizePersian: z.boolean().optional() }) }),
   z.object({ type: z.literal("LONG_TEXT"), settings: baseSettings.extend({ minimumCharacters: z.number().int().min(0).optional(), maximumCharacters: z.number().int().positive().optional() }) }),
-  z.object({ type: z.literal("NUMERIC"), settings: z.object({ target: z.number().finite(), tolerance: z.number().finite().min(0).optional() }) }),
-  z.object({ type: z.literal("ORDERING"), settings: z.object({ partialCredit: z.boolean().optional() }) }),
-  z.object({ type: z.literal("MATCHING"), settings: z.object({ partialCredit: z.boolean().optional(), pairs: z.array(z.object({ leftId: z.string().min(1), rightId: z.string().min(1) })).min(1) }) })
+  z.object({ type: z.literal("NUMERIC"), settings: z.object({ target: z.number().finite(), tolerance: z.number().finite().min(0).optional(), ...skillSettings }) }),
+  z.object({ type: z.literal("ORDERING"), settings: z.object({ partialCredit: z.boolean().optional(), ...skillSettings }) }),
+  z.object({ type: z.literal("MATCHING"), settings: z.object({ partialCredit: z.boolean().optional(), pairs: z.array(z.object({ leftId: z.string().min(1), rightId: z.string().min(1) })).min(1), ...skillSettings }) })
 ]);
 
 export const questionInputSchema = z.object({

@@ -26,6 +26,16 @@ function shuffle<T>(items: readonly T[]) {
 
 function isAnswerShapeValid(question: PublicQuestionDto, value: unknown) {
   if (value === null || value === undefined || value === "") return true;
+  if (question.settings.responseMode === "AUDIO") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+    const recording = value as { kind?: unknown; url?: unknown; durationSeconds?: unknown };
+    if (recording.kind !== "AUDIO_RECORDING" || typeof recording.url !== "string" || typeof recording.durationSeconds !== "number" || !Number.isFinite(recording.durationSeconds) || recording.durationSeconds <= 0) return false;
+    try {
+      return new URL(recording.url).pathname.includes(`/attempt-recordings/${question.id}/`);
+    } catch {
+      return false;
+    }
+  }
   if (["SINGLE_CHOICE", "DROPDOWN"].includes(question.type)) return typeof value === "string" && question.options.some((option) => option.id === value);
   if (question.type === "TRUE_FALSE") return typeof value === "boolean" || value === "true" || value === "false";
   if (question.type === "MULTIPLE_CHOICE" || question.type === "ORDERING") return Array.isArray(value) && value.every((item) => typeof item === "string" && question.options.some((option) => option.id === item));
@@ -202,34 +212,45 @@ export async function submitAttempt(attemptId: string, finalAnswers: Array<{ sna
   const result = gradeAttempt(snapshots.map((snapshot) => ({ snapshotId: snapshot.id, snapshot: snapshot.gradingSnapshot as unknown as GradingSnapshot, value: bySnapshot.get(snapshot.id) ?? null })));
   const topicWeaknesses = collectTopicWeaknesses(snapshots, result);
   const finalStatus = result.pendingReviewCount ? "PENDING_REVIEW" : "COMPLETED";
-  await db.transaction(async (transaction) => {
-    await transaction.update(examAttempts).set({ status: finalStatus, submittedAt: new Date(), completedAt: finalStatus === "COMPLETED" ? new Date() : null, scorePoints: result.awardedPoints, scorePercent: Math.round(result.scorePercent), correctCount: result.correctCount, incorrectCount: result.incorrectCount, partialCount: result.partialCount, unansweredCount: result.unansweredCount, pendingReviewCount: result.pendingReviewCount, resultMessage: deterministicResultMessage(result.scorePercent, exam.locale), durationUsedSeconds: Math.max(0, Math.round((Date.now() - attempt.startedAt.getTime()) / 1_000)), updatedAt: new Date() }).where(eq(examAttempts.id, attemptId));
-    for (const item of result.items) {
-      await transaction.update(attemptAnswers).set({ status: item.status, pointsAwarded: item.pointsAwarded, gradedAt: new Date(), updatedAt: new Date() }).where(and(eq(attemptAnswers.attemptId, attemptId), eq(attemptAnswers.snapshotId, item.snapshotId)));
-    }
-    if (topicWeaknesses.length) await transaction.insert(attemptTopicPerformance).values(topicWeaknesses.map((topic) => ({
+  const finalizedAt = new Date();
+  // The Neon HTTP driver provides atomic batches, but does not support
+  // interactive transaction callbacks. Keep every final grading write together.
+  await db.batch([
+    db.update(examAttempts).set({ status: finalStatus, submittedAt: finalizedAt, completedAt: finalStatus === "COMPLETED" ? finalizedAt : null, scorePoints: result.awardedPoints, scorePercent: Math.round(result.scorePercent), correctCount: result.correctCount, incorrectCount: result.incorrectCount, partialCount: result.partialCount, unansweredCount: result.unansweredCount, pendingReviewCount: result.pendingReviewCount, resultMessage: deterministicResultMessage(result.scorePercent, exam.locale), durationUsedSeconds: Math.max(0, Math.round((Date.now() - attempt.startedAt.getTime()) / 1_000)), updatedAt: finalizedAt }).where(eq(examAttempts.id, attemptId)),
+    ...result.items.map((item) => db.update(attemptAnswers).set({ status: item.status, pointsAwarded: item.pointsAwarded, gradedAt: finalizedAt, updatedAt: finalizedAt }).where(and(eq(attemptAnswers.attemptId, attemptId), eq(attemptAnswers.snapshotId, item.snapshotId)))),
+    ...(topicWeaknesses.length ? [db.insert(attemptTopicPerformance).values(topicWeaknesses.map((topic) => ({
       attemptId,
       topicId: topic.topicId,
       availablePoints: topic.availablePoints,
       awardedPoints: topic.awardedPoints,
       incorrectCount: topic.incorrectCount,
       unansweredCount: topic.unansweredCount
-    })));
-  });
-  await createPersonalizedRecommendations({
-    attemptId,
-    locale: exam.locale,
-    examTitle: exam.title,
-    examDifficulty: exam.difficulty,
-    scorePercent: Math.round(result.scorePercent),
-    correctCount: result.correctCount,
-    incorrectCount: result.incorrectCount,
-    partialCount: result.partialCount,
-    unansweredCount: result.unansweredCount,
-    pendingReviewCount: result.pendingReviewCount,
-    weaknesses: topicWeaknesses
-  });
-  await writeAuditLog({ actorUserId: user.id, action: "SUBMIT_ATTEMPT", entityType: "attempt", entityId: attemptId });
+    })))] : [])
+  ]);
+  // A completed attempt must stay completed even if non-critical follow-up work
+  // (AI recommendations or audit persistence) is temporarily unavailable.
+  try {
+    await createPersonalizedRecommendations({
+      attemptId,
+      locale: exam.locale,
+      examTitle: exam.title,
+      examDifficulty: exam.difficulty,
+      scorePercent: Math.round(result.scorePercent),
+      correctCount: result.correctCount,
+      incorrectCount: result.incorrectCount,
+      partialCount: result.partialCount,
+      unansweredCount: result.unansweredCount,
+      pendingReviewCount: result.pendingReviewCount,
+      weaknesses: topicWeaknesses
+    });
+  } catch (error) {
+    console.error("Could not create attempt recommendations", error);
+  }
+  try {
+    await writeAuditLog({ actorUserId: user.id, action: "SUBMIT_ATTEMPT", entityType: "attempt", entityId: attemptId });
+  } catch (error) {
+    console.error("Could not write submit-attempt audit log", error);
+  }
   return getAttemptResult(attemptId, user.id, user.role as Role);
 }
 

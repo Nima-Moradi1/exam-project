@@ -87,11 +87,16 @@ async function seedSampleExam(categoryMap: CategoryMap, input: SeedExam) {
   const current = await db.select().from(exams).where(eq(exams.slug, input.slug)).limit(1).then((rows) => rows[0]);
   const exam = current ?? (await db.insert(exams).values({ categoryId, slug: input.slug, title: input.title, shortDescription: input.shortDescription, description: input.description, instructions: input.instructions, locale: "en", direction: "LTR", difficulty: input.difficulty, status: "PUBLISHED", durationSeconds: input.durationSeconds, passingScorePercent: 60, showResultsImmediately: true, antiCheatMode: "WARN" }).returning())[0];
   if (!exam) throw new Error(`Could not seed ${input.slug}`);
-  const currentQuestions = await db.select({ id: questions.id }).from(questions).where(eq(questions.examId, exam.id)).limit(1);
-  if (!currentQuestions.length) {
+  const currentQuestions = await db.select({ id: questions.id, settings: questions.settings }).from(questions).where(eq(questions.examId, exam.id));
+  // The original full-demo seed predated the four-skill contract. Replace only
+  // that known demo's incomplete source questions; immutable attempt snapshots
+  // remain untouched and therefore preserve prior attempts.
+  const isLegacyFullDemo = input.slug === "ielts-a2-full-demo" && !["READING", "LISTENING", "WRITING", "SPEAKING"].every((skill) => currentQuestions.some((question) => question.settings.skill === skill));
+  if (isLegacyFullDemo && currentQuestions.length) await db.delete(questions).where(eq(questions.examId, exam.id));
+  if (!currentQuestions.length || isLegacyFullDemo) {
     await db.insert(examOutlineItems).values(input.outline.map((title, sortOrder) => ({ examId: exam.id, title, sortOrder })));
     for (const [sortOrder, seed] of input.questions.entries()) {
-      const [question] = await db.insert(questions).values({ examId: exam.id, type: seed.type, gradingMode: "AUTOMATIC", prompt: seed.prompt, locale: "en", direction: "LTR", points: 1, isRequired: true, sortOrder, explanation: seed.explanation, settings: {} }).returning({ id: questions.id });
+      const [question] = await db.insert(questions).values({ examId: exam.id, type: seed.type, gradingMode: seed.gradingMode ?? "AUTOMATIC", prompt: seed.prompt, locale: "en", direction: "LTR", points: 1, isRequired: true, sortOrder, explanation: seed.explanation, settings: seed.settings ?? {} }).returning({ id: questions.id });
       if (!question) continue;
       const options = seed.options ?? (seed.type === "TRUE_FALSE" ? ["True", "False"] : []);
       if (options.length) await db.insert(questionOptions).values(options.map((label, index) => ({ questionId: question.id, label, value: seed.type === "TRUE_FALSE" ? String(index === 0) : label, isCorrect: Array.isArray(seed.answer) ? seed.answer.includes(label) : seed.type === "TRUE_FALSE" ? String(seed.answer) === String(index === 0) : seed.answer === label, sortOrder: index })));

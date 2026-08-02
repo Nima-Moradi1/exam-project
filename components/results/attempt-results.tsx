@@ -19,6 +19,7 @@ const labels = { CORRECT: "درست", INCORRECT: "نادرست", PARTIALLY_CORRE
 
 function answerText(item: ResultItem, value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
+  if (value && typeof value === "object" && !Array.isArray(value) && (value as { kind?: unknown }).kind === "AUDIO_RECORDING" && typeof (value as { url?: unknown }).url === "string") return <audio controls controlsList="nodownload noplaybackrate"><source src={(value as { url: string }).url} /></audio>;
   if (Array.isArray(value)) return value.map((id) => item.question.options.find((option) => option.id === id)?.label ?? String(id)).join("، ");
   if (typeof value === "boolean") return value ? "درست" : "نادرست";
   return item.question.options.find((option) => option.id === value)?.label ?? String(value);

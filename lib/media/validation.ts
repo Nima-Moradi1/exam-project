@@ -7,6 +7,8 @@ const allowed = new Map([
   ["image/gif", { kind: "IMAGE" as const, maxSize: 8 * 1024 * 1024 }],
   ["audio/mpeg", { kind: "AUDIO" as const, maxSize: 25 * 1024 * 1024 }],
   ["audio/ogg", { kind: "AUDIO" as const, maxSize: 25 * 1024 * 1024 }],
+  ["audio/webm", { kind: "AUDIO" as const, maxSize: 25 * 1024 * 1024 }],
+  ["audio/mp4", { kind: "AUDIO" as const, maxSize: 25 * 1024 * 1024 }],
   ["application/pdf", { kind: "DOCUMENT" as const, maxSize: 15 * 1024 * 1024 }]
 ]);
 

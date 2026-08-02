@@ -56,6 +56,23 @@ export async function validateExamForPublication(examId: string) {
   const questionRows = await db.select().from(questions).where(and(eq(questions.examId, examId), isNull(questions.deletedAt)));
   if (!questionRows.length) failures.push("آزمون حداقل به یک پرسش نیاز دارد.");
   if (!questionRows.reduce((total, question) => total + question.points, 0)) failures.push("جمع امتیاز پرسش‌ها باید بیشتر از صفر باشد.");
+  const category = await db.select({ slug: categories.slug }).from(categories).where(eq(categories.id, exam.categoryId)).limit(1).then((rows) => rows[0]);
+  if (category?.slug === "full") {
+    const bySkill = new Map<string, typeof questionRows>();
+    for (const question of questionRows) {
+      const skill = typeof question.settings.skill === "string" ? question.settings.skill : "";
+      bySkill.set(skill, [...(bySkill.get(skill) ?? []), question]);
+    }
+    const requiredSkills = ["READING", "LISTENING", "WRITING", "SPEAKING"] as const;
+    const missing = requiredSkills.filter((skill) => !bySkill.get(skill)?.length);
+    if (missing.length) failures.push(`آزمون جامع باید هر چهار بخش Reading، Listening، Writing و Speaking را داشته باشد. بخش‌های ناقص: ${missing.join("، ")}.`);
+    const listening = bySkill.get("LISTENING") ?? [];
+    if (listening.some((question) => typeof question.settings.audioUrl !== "string" && typeof question.settings.audioScript !== "string")) failures.push("هر پرسش Listening در آزمون جامع باید فایل یا متن صوتی داشته باشد.");
+    const writing = bySkill.get("WRITING") ?? [];
+    if (writing.some((question) => question.type !== "LONG_TEXT" || question.gradingMode === "AUTOMATIC")) failures.push("بخش Writing باید پاسخ تشریحی و بررسی دستی یا هوشمند داشته باشد.");
+    const speaking = bySkill.get("SPEAKING") ?? [];
+    if (speaking.some((question) => question.type !== "LONG_TEXT" || question.gradingMode === "AUTOMATIC" || question.settings.responseMode !== "AUDIO")) failures.push("بخش Speaking باید پاسخ صوتیِ قابل ضبط و بررسی دستی یا هوشمند داشته باشد.");
+  }
   for (const question of questionRows) {
     if (question.gradingMode === "AUTOMATIC" && ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "DROPDOWN"].includes(question.type)) {
       const correct = await db.select({ id: questionOptions.id }).from(questionOptions).where(and(eq(questionOptions.questionId, question.id), eq(questionOptions.isCorrect, true))).limit(1);

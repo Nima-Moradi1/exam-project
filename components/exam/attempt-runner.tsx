@@ -1,9 +1,11 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { getQuestionPassage } from "@/lib/exams/passage";
+import { getQuestionPassage, type QuestionPassage } from "@/lib/exams/passage";
 import type { PublicAttemptDto, PublicQuestionDto } from "@/lib/exams/types";
+import { SpeechRecorder } from "./speech-recorder";
+import { ListeningPlayer } from "./listening-player";
 
 type SaveState = "saved" | "saving" | "failed";
 
@@ -15,8 +17,28 @@ function Choice({ checked, children, input }: { checked: boolean; children: Reac
   return <label className={`choice-item${checked ? " choice-item--selected" : ""}`}>{input}<span className="choice-item__marker" aria-hidden="true">{checked ? "✓" : ""}</span><span>{children}</span></label>;
 }
 
-function AnswerControl({ question, value, onChange, disabled }: { question: PublicQuestionDto; value: unknown; onChange: (value: unknown) => void; disabled: boolean }) {
+type PassageEntry = { key: string; id: string; passage: QuestionPassage };
+
+const PassagePanel = memo(function PassagePanel({ entry, open, onToggle }: { entry: PassageEntry; open: boolean; onToggle: () => void }) {
+  return <section className="attempt-passage" aria-labelledby={entry.id}>
+    <header>
+      <div><span>متن مرتبط</span><h2 id={entry.id}>{entry.passage.title}</h2></div>
+      <button type="button" onClick={onToggle} aria-expanded={open}>{open ? "بستن متن" : "نمایش متن"}</button>
+    </header>
+    {open && <div className="attempt-passage__content">{entry.passage.text.split(/\n\n+/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>}
+  </section>;
+});
+
+const skillNames = { READING: "Reading", LISTENING: "Listening", WRITING: "Writing", SPEAKING: "Speaking" } as const;
+
+function skillOf(question: PublicQuestionDto) {
+  const value = question.settings.skill;
+  return typeof value === "string" && value in skillNames ? value as keyof typeof skillNames : null;
+}
+
+function AnswerControl({ question, value, onChange, disabled, attemptId, onRecordingBusyChange }: { question: PublicQuestionDto; value: unknown; onChange: (value: unknown) => void; disabled: boolean; attemptId: string; onRecordingBusyChange: (busy: boolean) => void }) {
   const name = `question-${question.id}`;
+  if (question.settings.responseMode === "AUDIO") return <SpeechRecorder attemptId={attemptId} snapshotId={question.id} value={value} disabled={disabled} onChange={onChange} onBusyChange={onRecordingBusyChange} />;
   if (question.type === "SHORT_TEXT" || question.type === "NUMERIC") return <label className="attempt-field">پاسخ شما<input type={question.type === "NUMERIC" ? "number" : "text"} value={typeof value === "string" || typeof value === "number" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} /></label>;
   if (question.type === "LONG_TEXT") return <label className="attempt-field">پاسخ شما<textarea value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} /></label>;
   if (question.type === "DROPDOWN") return <label className="attempt-field">پاسخ خود را انتخاب کنید<select value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled}><option value="">یک گزینه را انتخاب کنید</option>{question.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>;
@@ -44,20 +66,33 @@ export function AttemptRunner({ attempt }: { attempt: PublicAttemptDto }) {
   const [remaining, setRemaining] = useState(() => Math.max(0, new Date(attempt.expiresAt).getTime() - Date.now()));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [passageOpen, setPassageOpen] = useState(true);
+  const [recordingBusy, setRecordingBusy] = useState(false);
+  const [passageOpenByKey, setPassageOpenByKey] = useState<Record<string, boolean>>({});
   const [integrityNotice, setIntegrityNotice] = useState("");
   const [captureShield, setCaptureShield] = useState(false);
   const pending = useRef<Record<string, unknown>>({});
   const revisionsRef = useRef(revisions);
   const current = attempt.questions[index];
+  const passagesByQuestionId = useMemo(() => {
+    const entries = new Map<string, PassageEntry>();
+    const byQuestionId: Record<string, PassageEntry | undefined> = {};
+    for (const question of attempt.questions) {
+      const passage = getQuestionPassage(question);
+      if (!passage) continue;
+      const key = `${passage.title}\u0000${passage.text}`;
+      const entry = entries.get(key) ?? { key, id: `attempt-passage-${entries.size + 1}`, passage };
+      entries.set(key, entry);
+      byQuestionId[question.id] = entry;
+    }
+    return byQuestionId;
+  }, [attempt.questions]);
   const answered = useMemo(() => attempt.questions.filter((question) => !empty(answers[question.id])).length, [answers, attempt.questions]);
   const expired = remaining <= 0;
-  const passage = current ? getQuestionPassage(current) : null;
+  const passageEntry = current ? passagesByQuestionId[current.id] : undefined;
+  const passageOpen = passageEntry ? passageOpenByKey[passageEntry.key] ?? true : false;
 
   useEffect(() => { const timer = window.setInterval(() => setRemaining(Math.max(0, new Date(attempt.expiresAt).getTime() - Date.now())), 1_000); return () => window.clearInterval(timer); }, [attempt.expiresAt]);
   useEffect(() => { try { localStorage.setItem(`attempt-backup:${attempt.id}`, JSON.stringify({ answers, revisions })); } catch {} }, [answers, attempt.id, revisions]);
-  useEffect(() => { setPassageOpen(true); }, [current?.id]);
-
   const notifyIntegrity = useCallback((message: string) => {
     setIntegrityNotice(message);
     window.setTimeout(() => setIntegrityNotice(""), 3200);
@@ -113,14 +148,33 @@ export function AttemptRunner({ attempt }: { attempt: PublicAttemptDto }) {
     setError("");
   }
 
+  const togglePassage = useCallback(() => {
+    if (!passageEntry) return;
+    setPassageOpenByKey((currentState) => ({ ...currentState, [passageEntry.key]: !(currentState[passageEntry.key] ?? true) }));
+  }, [passageEntry]);
+
   async function submit() {
-    await flush(); setSubmitting(true); setError("");
-    const response = await fetch(`/api/attempts/${attempt.id}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: [] }) });
-    if (!response.ok) { setError("ثبت آزمون انجام نشد. دوباره تلاش کنید."); setSubmitting(false); return; }
-    window.location.assign(`/attempts/${attempt.id}/results`);
+    if (submitting) return;
+    setSubmitting(true);
+    setError("");
+    await flush();
+    try {
+      const finalAnswers = Object.entries(answers)
+        .filter(([, value]) => !empty(value))
+        .map(([snapshotId, value]) => ({ snapshotId, value, clientRevision: revisionsRef.current[snapshotId] ?? 0 }));
+      const response = await fetch(`/api/attempts/${attempt.id}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers: finalAnswers }) });
+      if (!response.ok) throw new Error("SUBMIT_FAILED");
+      window.location.assign(`/attempts/${attempt.id}/results`);
+    } catch {
+      setError("ثبت آزمون انجام نشد. دوباره تلاش کنید.");
+      setSubmitting(false);
+    }
   }
 
   if (!current) return null;
   const minutes = Math.floor(remaining / 60_000); const seconds = Math.floor(remaining / 1_000) % 60;
-  return <main id="main-content" className={`attempt-runner page-shell${captureShield ? " attempt-runner--shielded" : ""}`} lang={attempt.exam.locale} dir={attempt.exam.direction} translate="no" onContextMenu={(event) => { event.preventDefault(); notifyIntegrity("باز کردن منوی محتوا در آزمون مجاز نیست."); }} onCopy={(event) => { event.preventDefault(); notifyIntegrity("کپی‌برداری از محتوای آزمون مجاز نیست."); }} onCut={(event) => { event.preventDefault(); notifyIntegrity("برداشتن محتوا در آزمون مجاز نیست."); }} onPaste={(event) => { event.preventDefault(); notifyIntegrity("جای‌گذاری متن در آزمون مجاز نیست."); }} onDragStart={(event) => event.preventDefault()}><div className="attempt-watermark" aria-hidden="true">{attempt.id.slice(0, 8)}</div><header className="attempt-runner__header"><div><p>{attempt.exam.title}</p><strong>{answered} / {attempt.questions.length} پاسخ</strong></div><div role="timer" aria-live="polite" aria-label={`زمان باقی‌مانده ${minutes}:${String(seconds).padStart(2, "0")}`}>{minutes}:{String(seconds).padStart(2, "0")}</div><span role="status">{saveState === "saving" ? "در حال ذخیره…" : saveState === "failed" ? "ذخیره ناموفق؛ تلاش مجدد" : "ذخیره شد"}</span></header>{integrityNotice && <p className="attempt-integrity-notice" role="status">{integrityNotice}</p>}<div className="attempt-layout"><nav aria-label="پرسش‌ها" className="attempt-palette">{attempt.questions.map((question, itemIndex) => <button type="button" key={question.id} onClick={() => setIndex(itemIndex)} aria-current={itemIndex === index ? "step" : undefined} className={`${itemIndex === index ? "is-current" : ""}${!empty(answers[question.id]) ? " is-answered" : ""}`}>{question.position}</button>)}</nav><section className="attempt-question" aria-labelledby={`question-${current.id}`}>{passage && <section className="attempt-passage" aria-labelledby={`passage-${current.id}`}><header><div><span>متن مرتبط</span><h2 id={`passage-${current.id}`}>{passage.title}</h2></div><button type="button" onClick={() => setPassageOpen((open) => !open)} aria-expanded={passageOpen}>{passageOpen ? "بستن متن" : "نمایش متن"}</button></header>{passageOpen && <div className="attempt-passage__content">{passage.text.split(/\n\n+/).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>}</section>}<p>پرسش {current.position} از {attempt.questions.length}</p><h1 id={`question-${current.id}`}>{current.prompt}</h1>{current.description && <p>{current.description}</p>}<AnswerControl question={current} value={answers[current.id] ?? null} onChange={(value) => update(current.id, value)} disabled={expired || submitting} /><div className="attempt-actions"><button type="button" className="secondary-button" onClick={() => setIndex((value) => Math.max(0, value - 1))} disabled={index === 0}>قبلی</button>{index < attempt.questions.length - 1 ? <button type="button" className="primary-button" onClick={() => setIndex((value) => Math.min(attempt.questions.length - 1, value + 1))}>بعدی</button> : <button type="button" className="primary-button" disabled={submitting || expired} onClick={() => void submit()}>{submitting ? "در حال ثبت…" : "ثبت نهایی آزمون"}</button>}</div>{error && <p role="alert" className="form-error">{error}</p>}</section></div></main>;
+  const currentSkill = skillOf(current);
+  const listeningUrl = typeof current.settings.audioUrl === "string" ? current.settings.audioUrl : undefined;
+  const listeningScript = typeof current.settings.audioScript === "string" ? current.settings.audioScript : undefined;
+  return <main id="main-content" className={`attempt-runner page-shell${captureShield ? " attempt-runner--shielded" : ""}`} lang={attempt.exam.locale} dir={attempt.exam.direction} translate="no" onContextMenu={(event) => { event.preventDefault(); notifyIntegrity("باز کردن منوی محتوا در آزمون مجاز نیست."); }} onCopy={(event) => { event.preventDefault(); notifyIntegrity("کپی‌برداری از محتوای آزمون مجاز نیست."); }} onCut={(event) => { event.preventDefault(); notifyIntegrity("برداشتن محتوا در آزمون مجاز نیست."); }} onPaste={(event) => { event.preventDefault(); notifyIntegrity("جای‌گذاری متن در آزمون مجاز نیست."); }} onDragStart={(event) => event.preventDefault()}><div className="attempt-watermark" aria-hidden="true">{attempt.id.slice(0, 8)}</div><header className="attempt-runner__header"><div><p>{attempt.exam.title}</p><strong>{answered} / {attempt.questions.length} پاسخ</strong></div><div role="timer" aria-live="polite" aria-label={`زمان باقی‌مانده ${minutes}:${String(seconds).padStart(2, "0")}`}>{minutes}:{String(seconds).padStart(2, "0")}</div><span role="status">{saveState === "saving" ? "در حال ذخیره…" : saveState === "failed" ? "ذخیره ناموفق؛ تلاش مجدد" : "ذخیره شد"}</span></header>{integrityNotice && <p className="attempt-integrity-notice" role="status">{integrityNotice}</p>}<div className="attempt-layout"><nav aria-label="پرسش‌ها" className="attempt-palette">{attempt.questions.map((question, itemIndex) => <button type="button" key={question.id} onClick={() => setIndex(itemIndex)} disabled={recordingBusy} aria-current={itemIndex === index ? "step" : undefined} className={`${itemIndex === index ? "is-current" : ""}${!empty(answers[question.id]) ? " is-answered" : ""}`}>{question.position}</button>)}</nav><section className="attempt-question" aria-labelledby={`question-${current.id}`}>{currentSkill && <p className={`attempt-skill attempt-skill--${currentSkill.toLowerCase()}`}>{skillNames[currentSkill]}</p>}{currentSkill === "LISTENING" && <ListeningPlayer audioUrl={listeningUrl} audioScript={listeningScript} />}{passageEntry && <PassagePanel entry={passageEntry} open={passageOpen} onToggle={togglePassage} />}<p>پرسش {current.position} از {attempt.questions.length}</p><h1 id={`question-${current.id}`}>{current.prompt}</h1>{current.description && <p>{current.description}</p>}<AnswerControl question={current} value={answers[current.id] ?? null} onChange={(value) => update(current.id, value)} disabled={expired || submitting} attemptId={attempt.id} onRecordingBusyChange={setRecordingBusy} /><div className="attempt-actions"><button type="button" className="secondary-button" onClick={() => setIndex((value) => Math.max(0, value - 1))} disabled={index === 0 || recordingBusy}>قبلی</button>{index < attempt.questions.length - 1 ? <button type="button" className="primary-button" onClick={() => setIndex((value) => Math.min(attempt.questions.length - 1, value + 1))} disabled={recordingBusy}>بعدی</button> : <button type="button" className="primary-button" disabled={submitting || expired || recordingBusy} onClick={() => void submit()}>{submitting ? "در حال ثبت…" : recordingBusy ? "در حال ذخیرهٔ صدا…" : "ثبت نهایی آزمون"}</button>}</div>{error && <p role="alert" className="form-error attempt-submit-error">{error}</p>}</section></div></main>;
 }
