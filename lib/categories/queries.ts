@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, count, eq, isNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { getDb } from "@/lib/db";
 import { categories, exams } from "@/lib/db/schema";
@@ -71,6 +72,19 @@ export async function getCategoryTree({ includeHidden = false }: { includeHidden
     else roots.push(node);
   }
   return roots;
+}
+
+export async function getAdminCategoryPage({ limit, offset }: { limit: number; offset: number }) {
+  const parentCategories = alias(categories, "admin_parent_categories");
+  const db = getDb();
+  const [items, totals] = await Promise.all([
+    db.select({
+      id: categories.id, parentId: categories.parentId, name: categories.name, slug: categories.slug,
+      locale: categories.locale, direction: categories.direction, status: categories.status, parentName: parentCategories.name
+    }).from(categories).leftJoin(parentCategories, eq(categories.parentId, parentCategories.id)).where(isNull(categories.deletedAt)).orderBy(asc(categories.sortOrder), asc(categories.name)).limit(limit).offset(offset),
+    db.select({ value: count() }).from(categories).where(isNull(categories.deletedAt))
+  ]);
+  return { items, total: Number(totals[0]?.value ?? 0) };
 }
 
 export async function getCategoryByPath(segments: string[], { includeHidden = false }: { includeHidden?: boolean } = {}) {
