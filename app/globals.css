@@ -1462,9 +1462,10 @@ button:not(:disabled) {
   background: var(--green-soft);
 }
 
+.syllabus-dialog__heading > span + span { display: block; width: auto; height: auto; color: inherit; border-radius: 0; background: transparent; }
 .syllabus-dialog__heading svg { width: 22px; height: 22px; }
-.syllabus-dialog__heading p { margin: 0; color: var(--muted); font-size: 0.67rem; }
-.syllabus-dialog__heading h2 { margin: 2px 0 0; font-size: 1.17rem; }
+.syllabus-dialog__heading small { display: block; margin: 0 0 2px; color: var(--muted); font-size: 0.67rem; font-weight: 400; }
+.syllabus-dialog__heading > span + span { font-size: 1.17rem; font-weight: 800; }
 .syllabus-dialog__intro { margin: 24px 0 12px; color: var(--text-soft); font-size: 0.8rem; }
 
 .syllabus-dialog ul {
@@ -2748,6 +2749,7 @@ button:not(:disabled) {
 .result-status-sheet { margin-block: 28px; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
 .result-status-sheet > label { display: inline-flex; align-items: center; gap: 10px; color: var(--text-soft); font-weight: 700; }
 .result-status-sheet select { width: auto; min-height: 34px; }
+.result-status-sheet__filter { max-inline-size: 260px; }
 .status-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 16px; }
 .status-grid a { display: inline-flex; gap: 5px; padding: 7px 9px; color: inherit; border-radius: 8px; text-decoration: none; }
 .status { font-weight: 800; }

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { updateOwnProfile } from "@/lib/auth/actions";
+import { AppButton, AppSelect, AppTextArea, AppTextField } from "@/components/ui/form-controls";
 
 export function ProfileForm({ profile }: { profile: { displayName: string; bio: string | null; preferredLocale: "fa" | "en"; timezone: string | null } }) {
   const router = useRouter();
@@ -32,16 +33,12 @@ export function ProfileForm({ profile }: { profile: { displayName: string; bio: 
   }
   return (
     <form className="auth-form" action={onSubmit}>
-      <label htmlFor="displayName">نام نمایشی</label>
-      <input id="displayName" name="displayName" required defaultValue={profile.displayName} />
-      <label htmlFor="bio">دربارهٔ من</label>
-      <textarea id="bio" name="bio" maxLength={1000} defaultValue={profile.bio ?? ""} />
-      <label htmlFor="preferredLocale">زبان ترجیحی</label>
-      <select id="preferredLocale" name="preferredLocale" defaultValue={profile.preferredLocale}><option value="fa">فارسی</option><option value="en">English</option></select>
-      <label htmlFor="timezone">منطقهٔ زمانی</label>
-      <input id="timezone" name="timezone" maxLength={80} defaultValue={profile.timezone ?? ""} placeholder="Asia/Tehran" dir="ltr" />
+      <AppTextField id="displayName" label="نام نمایشی" name="displayName" required defaultValue={profile.displayName} />
+      <AppTextArea id="bio" label="دربارهٔ من" name="bio" maxLength={1000} defaultValue={profile.bio ?? ""} />
+      <AppSelect defaultValue={profile.preferredLocale} label="زبان ترجیحی" name="preferredLocale" options={[{ value: "fa", label: "فارسی" }, { value: "en", label: "English" }]} />
+      <AppTextField id="timezone" label="منطقهٔ زمانی" name="timezone" maxLength={80} defaultValue={profile.timezone ?? ""} placeholder="Asia/Tehran" dir="ltr" />
       {message && <p role="status" className={saved ? "form-success" : "form-error"}>{saved && <span aria-hidden="true">✓</span>}<span>{message}</span>{saved && <small>بازگشت به حساب کاربری…</small>}</p>}
-      <button className="primary-button" disabled={pending || saved} type="submit">{pending ? "در حال ذخیره…" : saved ? "ذخیره شد" : "ذخیرهٔ تغییرات"}</button>
+      <AppButton className="primary-button" isDisabled={pending || saved} type="submit">{pending ? "در حال ذخیره…" : saved ? "ذخیره شد" : "ذخیرهٔ تغییرات"}</AppButton>
     </form>
   );
 }

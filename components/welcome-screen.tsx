@@ -11,6 +11,7 @@ import {
 } from "@/components/icons";
 import Link from "next/link";
 import { SyllabusDialog } from "@/components/syllabus-dialog";
+import { AppButton } from "@/components/ui/form-controls";
 import type { ExamSyllabus } from "@/lib/exam-syllabi";
 
 interface WelcomeScreenProps {
@@ -72,11 +73,11 @@ export function WelcomeScreen({ onStart, exam = defaultExam, startDisabled = fal
           </div>
         </div>
 
-        {exam.syllabus && <button className="syllabus-link" type="button" onClick={() => setShowSyllabus(true)}>مشاهده سرفصل‌های آزمون</button>}
-        <button className="primary-button primary-button--large" type="button" onClick={onStart} disabled={startDisabled}>
+        {exam.syllabus && <AppButton className="syllabus-link" onPress={() => setShowSyllabus(true)} tone="ghost">مشاهده سرفصل‌های آزمون</AppButton>}
+        <AppButton className="primary-button primary-button--large" isDisabled={startDisabled} onPress={onStart}>
           شروع آزمون
           <ArrowIcon />
-        </button>
+        </AppButton>
         <p className="start-note">{cooldownMessage ?? "با شروع آزمون، زمان و پاسخ‌ها در همین مرورگر ذخیره می‌شوند و زمان قابل شروع مجدد نیست."}</p>
         {showCssEntry && <Link className="secondary-button css-entry-button" href="/css">ورود به آزمون‌های CSS</Link>}
       </section>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { registerUser } from "@/lib/auth/actions";
+import { AppButton, AppTextField } from "@/components/ui/form-controls";
 
 export function SignupForm() {
   const router = useRouter();
@@ -39,15 +40,15 @@ export function SignupForm() {
         void onSubmit(new FormData(event.currentTarget));
       }}
     >
-      <div className="auth-form__field"><label className="auth-form__optional-label" htmlFor="displayName"><span aria-hidden="true">اختیاری</span> نام نمایشی</label><input id="displayName" name="displayName" autoComplete="name" maxLength={120} /></div>
-      <div className="auth-form__field"><label htmlFor="username">نام کاربری</label><input id="username" name="username" autoComplete="username" required minLength={3} maxLength={30} pattern="[a-z0-9_-]+" dir="ltr" /></div>
-      <div className="auth-form__field"><label htmlFor="email">ایمیل</label><input id="email" name="email" type="email" autoComplete="email" required dir="ltr" /></div>
-      <div className="auth-form__field"><label htmlFor="password">رمز عبور</label><input id="password" name="password" type="password" autoComplete="new-password" required minLength={10} /></div>
+      <AppTextField fieldClassName="auth-form__field" id="displayName" label={<><span aria-hidden="true">اختیاری</span> نام نمایشی</>} name="displayName" autoComplete="name" maxLength={120} />
+      <AppTextField fieldClassName="auth-form__field" id="username" label="نام کاربری" name="username" autoComplete="username" required minLength={3} maxLength={30} pattern="[a-z0-9_-]+" dir="ltr" />
+      <AppTextField fieldClassName="auth-form__field" id="email" label="ایمیل" name="email" type="email" autoComplete="email" required dir="ltr" />
+      <AppTextField fieldClassName="auth-form__field" id="password" label="رمز عبور" name="password" type="password" autoComplete="new-password" required minLength={10} />
       <p className="form-hint">حداقل ۱۰ نویسه و شامل دست‌کم سه نوع از حروف کوچک، بزرگ، عدد یا نماد.</p>
-      <div className="auth-form__field"><label htmlFor="confirmPassword">تکرار رمز عبور</label><input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" required minLength={10} /></div>
+      <AppTextField fieldClassName="auth-form__field" id="confirmPassword" label="تکرار رمز عبور" name="confirmPassword" type="password" autoComplete="new-password" required minLength={10} />
       <label className="checkbox-label"><input name="acceptedTerms" type="checkbox" required /> <span>شرایط استفاده را می‌پذیرم.</span></label>
       {error && <p role="alert" className="form-error">{error}</p>}
-      <button className="primary-button" disabled={pending} type="submit">{pending ? "در حال ساخت حساب…" : "ساخت حساب"}</button>
+      <AppButton className="primary-button" isDisabled={pending} type="submit">{pending ? "در حال ساخت حساب…" : "ساخت حساب"}</AppButton>
       <p className="form-hint">حساب دارید؟ <Link href="/login">وارد شوید</Link></p>
     </form>
   );

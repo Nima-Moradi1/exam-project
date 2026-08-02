@@ -10,8 +10,8 @@ type AppButtonProps = Omit<ComponentProps<typeof Button>, "className" | "variant
   tone?: ButtonTone;
 };
 
-export function AppButton({ className, tone = "primary", ...props }: AppButtonProps) {
-  return <Button className={clsx("ui-button", `ui-button--${tone}`, className)} variant={tone}>{props.children}</Button>;
+export function AppButton({ children, className, tone = "primary", ...props }: AppButtonProps) {
+  return <Button className={clsx("ui-button", `ui-button--${tone}`, className)} variant={tone} {...props}>{children}</Button>;
 }
 
 type AppTextFieldProps = Omit<ComponentProps<typeof Input>, "className"> & {

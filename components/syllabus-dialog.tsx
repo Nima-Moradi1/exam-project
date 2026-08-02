@@ -1,6 +1,8 @@
 "use client";
 
 import { CheckIcon, ListIcon } from "@/components/icons";
+import { AppModal } from "@/components/ui/app-modal";
+import { AppButton } from "@/components/ui/form-controls";
 import type { ExamSyllabus } from "@/lib/exam-syllabi";
 
 interface SyllabusDialogProps {
@@ -10,18 +12,11 @@ interface SyllabusDialogProps {
 
 export function SyllabusDialog({ syllabus, onClose }: SyllabusDialogProps) {
   return (
-    <div className="dialog-backdrop syllabus-backdrop" role="presentation" onMouseDown={onClose}>
-      <section className="syllabus-dialog" role="dialog" aria-modal="true" aria-labelledby="syllabus-title" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="syllabus-dialog__heading">
-          <span><ListIcon /></span>
-          <div><p>پیش از شروع آزمون</p><h2 id="syllabus-title">{syllabus.title}</h2></div>
-        </div>
-        <p className="syllabus-dialog__intro">این آزمون مهارت‌های زیر را بررسی می‌کند:</p>
-        <ul>
-          {syllabus.items.map((item) => <li key={item}><CheckIcon />{item}</li>)}
-        </ul>
-        <button className="primary-button" type="button" onClick={onClose}>متوجه شدم</button>
-      </section>
-    </div>
+    <AppModal className="syllabus-dialog" footer={<AppButton className="primary-button" onPress={onClose}>متوجه شدم</AppButton>} isOpen onOpenChange={(isOpen) => { if (!isOpen) onClose(); }} title={<span className="syllabus-dialog__heading"><span><ListIcon /></span><span><small>پیش از شروع آزمون</small>{syllabus.title}</span></span>}>
+      <p className="syllabus-dialog__intro">این آزمون مهارت‌های زیر را بررسی می‌کند:</p>
+      <ul className="syllabus-dialog__items">
+        {syllabus.items.map((item) => <li key={item}><CheckIcon />{item}</li>)}
+      </ul>
+    </AppModal>
   );
 }

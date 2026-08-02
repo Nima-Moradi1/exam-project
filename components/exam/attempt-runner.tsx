@@ -4,6 +4,7 @@ import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState
 
 import { getQuestionPassage, type QuestionPassage } from "@/lib/exams/passage";
 import type { PublicAttemptDto, PublicQuestionDto } from "@/lib/exams/types";
+import { AppSelect, AppTextArea, AppTextField } from "@/components/ui/form-controls";
 import { SpeechRecorder } from "./speech-recorder";
 import { ListeningPlayer } from "./listening-player";
 
@@ -39,9 +40,9 @@ function skillOf(question: PublicQuestionDto) {
 function AnswerControl({ question, value, onChange, disabled, attemptId, onRecordingBusyChange }: { question: PublicQuestionDto; value: unknown; onChange: (value: unknown) => void; disabled: boolean; attemptId: string; onRecordingBusyChange: (busy: boolean) => void }) {
   const name = `question-${question.id}`;
   if (question.settings.responseMode === "AUDIO") return <SpeechRecorder attemptId={attemptId} snapshotId={question.id} value={value} disabled={disabled} onChange={onChange} onBusyChange={onRecordingBusyChange} />;
-  if (question.type === "SHORT_TEXT" || question.type === "NUMERIC") return <label className="attempt-field">پاسخ شما<input type={question.type === "NUMERIC" ? "number" : "text"} value={typeof value === "string" || typeof value === "number" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} /></label>;
-  if (question.type === "LONG_TEXT") return <label className="attempt-field">پاسخ شما<textarea value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} /></label>;
-  if (question.type === "DROPDOWN") return <label className="attempt-field">پاسخ خود را انتخاب کنید<select value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled}><option value="">یک گزینه را انتخاب کنید</option>{question.options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}</select></label>;
+  if (question.type === "SHORT_TEXT" || question.type === "NUMERIC") return <AppTextField fieldClassName="attempt-field" label="پاسخ شما" type={question.type === "NUMERIC" ? "number" : "text"} value={typeof value === "string" || typeof value === "number" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />;
+  if (question.type === "LONG_TEXT") return <AppTextArea fieldClassName="attempt-field" label="پاسخ شما" value={typeof value === "string" ? value : ""} onChange={(event) => onChange(event.target.value)} disabled={disabled} />;
+  if (question.type === "DROPDOWN") return <AppSelect className="attempt-field" disabled={disabled} label="پاسخ خود را انتخاب کنید" onChange={onChange} options={question.options.map((option) => ({ value: option.id, label: option.label }))} placeholder="یک گزینه را انتخاب کنید" value={typeof value === "string" ? value : ""} />;
   if (question.type === "MULTIPLE_CHOICE" || question.type === "ORDERING") {
     const selected = Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
     return <fieldset className="choice-list"><legend>{question.type === "MULTIPLE_CHOICE" ? "همهٔ گزینه‌های درست را انتخاب کنید" : "گزینه‌ها را به‌ترتیب انتخاب کنید"}</legend>{question.type === "ORDERING" && <p className="form-hint">هر گزینه را با ترتیب درست انتخاب کنید.</p>}{question.options.map((option) => {
