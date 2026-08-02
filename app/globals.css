@@ -2858,6 +2858,52 @@ button:not(:disabled) {
   color: var(--text);
 }
 
+/* Desktop navigation condenses into a floating glass surface once the page moves. */
+@media (min-width: 701px) {
+  .site-header {
+    transition: height 280ms cubic-bezier(.22, 1, .36, 1), background-color 240ms ease, border-color 240ms ease;
+  }
+
+  .site-header__inner {
+    transition: min-block-size 280ms cubic-bezier(.22, 1, .36, 1), padding 280ms cubic-bezier(.22, 1, .36, 1), border-color 240ms ease, background-color 240ms ease, box-shadow 280ms ease, border-radius 280ms cubic-bezier(.22, 1, .36, 1), transform 280ms cubic-bezier(.22, 1, .36, 1);
+  }
+
+  .site-header--condensed {
+    height: 84px;
+    pointer-events: none;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .site-header--condensed .site-header__inner {
+    min-block-size: 60px;
+    margin-block: 11px;
+    padding-inline: 16px;
+    pointer-events: auto;
+    border: 1px solid color-mix(in srgb, var(--line-strong) 60%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--surface-raised) 72%, transparent);
+    box-shadow: 0 14px 34px rgb(27 49 39 / .13), inset 0 1px 0 rgb(255 255 255 / .48);
+    backdrop-filter: blur(20px) saturate(145%);
+    -webkit-backdrop-filter: blur(20px) saturate(145%);
+  }
+
+  .dark .site-header--condensed .site-header__inner {
+    border-color: rgb(181 214 193 / .16);
+    background: rgb(21 30 25 / .72);
+    box-shadow: 0 16px 38px rgb(0 0 0 / .28), inset 0 1px 0 rgb(255 255 255 / .075);
+  }
+
+  .site-header--condensed .brand__mark { inline-size: 38px; block-size: 38px; border-radius: 12px; }
+  .site-header--condensed .brand__mark svg { inline-size: 21px; block-size: 21px; }
+  .site-header--condensed .brand strong { font-size: .92rem; }
+  .site-header--condensed .brand small { display: none; }
+  .site-header--condensed .site-nav a { min-height: 36px; padding-inline: 10px; font-size: .74rem; }
+  .site-header--condensed .site-header__actions .primary-button,
+  .site-header--condensed .site-header__actions .secondary-button { min-height: 36px; padding-inline: 11px; font-size: .73rem; }
+  .site-header--condensed .theme-toggle { inline-size: 38px; block-size: 38px; }
+}
+
 .hub-paths {
   margin-top: clamp(64px, 9vw, 120px);
 }
