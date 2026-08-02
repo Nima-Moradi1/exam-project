@@ -34,9 +34,10 @@ function Carousel({ path, exams }: { path: LearningPath; exams: SliderExam[] }) 
 }
 
 function FilterAutocomplete({ label, placeholder, items, selected, onChange }: { label: string; placeholder: string; items: Array<[string, string]>; selected: Set<string>; onChange: (values: Set<string>) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   return <div className="exam-autocomplete-wrap"><Autocomplete aria-label={label} className="exam-autocomplete" fullWidth selectedKey={null} onSelectionChange={(key) => { if (key) onChange(new Set([...selected, String(key)])); }}>
     <Label>{label}</Label>
-    <Autocomplete.Trigger><Autocomplete.Filter><Input placeholder={placeholder} /></Autocomplete.Filter><Autocomplete.Indicator /></Autocomplete.Trigger>
+    <Autocomplete.Trigger onClick={() => inputRef.current?.focus()}><Autocomplete.Filter><Input className="exam-autocomplete__input" fullWidth placeholder={placeholder} ref={inputRef} /></Autocomplete.Filter><Autocomplete.Indicator /></Autocomplete.Trigger>
     <Autocomplete.Popover><ListBox>{items.map(([slug, name]) => <ListBox.Item id={slug} key={slug} textValue={name}>{name}</ListBox.Item>)}</ListBox></Autocomplete.Popover>
   </Autocomplete>{selected.size > 0 && <div className="exam-autocomplete-tags" aria-label={`${label} انتخاب‌شده`}>{[...selected].map((slug) => <button key={slug} type="button" onClick={() => onChange(new Set([...selected].filter((value) => value !== slug)))}>{items.find(([value]) => value === slug)?.[1]} <span aria-hidden="true">×</span></button>)}</div>}</div>;
 }
