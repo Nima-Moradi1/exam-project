@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnswerValue, PublicQuestion } from "@/types/exam";
+import { AppSelect, AppTextField } from "@/components/ui/form-controls";
 
 interface QuestionCardProps {
   question: PublicQuestion;
@@ -38,9 +39,9 @@ export function QuestionCard({
 
       {question.type === "descriptive" && (
         <div className="short-answer">
-          <label htmlFor={inputName}>پاسخ شما</label>
-          <input
+          <AppTextField
             id={inputName}
+            label="پاسخ شما"
             name={inputName}
             type="text"
             inputMode="text"
@@ -56,25 +57,7 @@ export function QuestionCard({
       )}
 
       {question.type === "dropdown" && (
-        <div className="select-answer">
-          <label htmlFor={inputName}>پاسخ خود را انتخاب کنید</label>
-          <div className="select-wrap">
-            <select
-              id={inputName}
-              name={inputName}
-              value={typeof value === "string" ? value : ""}
-              onChange={(event) => onChange(event.target.value)}
-              disabled={disabled}
-            >
-              <option value="">یک گزینه را انتخاب کنید…</option>
-              {question.choices?.map((choice) => (
-                <option key={choice.id} value={choice.id}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <AppSelect className="select-answer" disabled={disabled} label="پاسخ خود را انتخاب کنید" name={inputName} onChange={onChange} options={(question.choices ?? []).map((choice) => ({ value: choice.id, label: choice.label }))} placeholder="یک گزینه را انتخاب کنید…" value={typeof value === "string" ? value : ""} />
       )}
 
       {(question.type === "multiple-choice" || question.type === "true-false") && (

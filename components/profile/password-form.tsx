@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { changeOwnPassword } from "@/lib/auth/actions";
+import { AppButton, AppTextField } from "@/components/ui/form-controls";
 
 export function PasswordForm() {
   const [message, setMessage] = useState("");
@@ -19,14 +20,11 @@ export function PasswordForm() {
   }
   return (
     <form className="auth-form" action={onSubmit}>
-      <label htmlFor="currentPassword">رمز عبور فعلی</label>
-      <input id="currentPassword" name="currentPassword" type="password" autoComplete="current-password" required />
-      <label htmlFor="newPassword">رمز عبور جدید</label>
-      <input id="newPassword" name="newPassword" type="password" autoComplete="new-password" minLength={10} required />
-      <label htmlFor="confirmPassword">تکرار رمز عبور جدید</label>
-      <input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" minLength={10} required />
+      <AppTextField id="currentPassword" label="رمز عبور فعلی" name="currentPassword" type="password" autoComplete="current-password" required />
+      <AppTextField id="newPassword" label="رمز عبور جدید" name="newPassword" type="password" autoComplete="new-password" minLength={10} required />
+      <AppTextField id="confirmPassword" label="تکرار رمز عبور جدید" name="confirmPassword" type="password" autoComplete="new-password" minLength={10} required />
       {message && <p role="status">{message}</p>}
-      <button className="primary-button" disabled={pending} type="submit">{pending ? "در حال ذخیره…" : "تغییر رمز عبور"}</button>
+      <AppButton className="primary-button" isDisabled={pending} type="submit">{pending ? "در حال ذخیره…" : "تغییر رمز عبور"}</AppButton>
     </form>
   );
 }

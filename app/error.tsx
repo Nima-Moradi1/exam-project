@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertIcon, RefreshIcon } from "@/components/icons";
+import { AppButton } from "@/components/ui/form-controls";
 
 export default function GlobalError({ reset }: { reset: () => void }) {
   return (
@@ -8,10 +9,10 @@ export default function GlobalError({ reset }: { reset: () => void }) {
       <AlertIcon />
       <h1>مشکلی در نمایش آزمون پیش آمد</h1>
       <p>اطلاعات شما در مرورگر حفظ شده است. دوباره تلاش کنید.</p>
-      <button className="primary-button" type="button" onClick={reset}>
+      <AppButton className="primary-button" onPress={reset}>
         <RefreshIcon />
         تلاش دوباره
-      </button>
+      </AppButton>
     </main>
   );
 }

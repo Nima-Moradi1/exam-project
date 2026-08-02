@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AppButton } from "@/components/ui/form-controls";
 
 const startErrors: Record<string, string> = {
   EXAM_NOT_READY: "این آزمون هنوز پرسش آماده برای شروع ندارد.",
@@ -36,5 +37,5 @@ export function StartExamButton({ examId }: { examId: string }) {
     }
     window.location.assign(`/attempts/${payload.id}`);
   }
-  return <div className="start-exam-action"><button className="primary-button primary-button--large" type="button" onClick={() => void start()} disabled={pending}>{pending ? "در حال آماده‌سازی…" : "شروع یا ادامهٔ آزمون"}</button>{message && <p role="alert" className="form-error">{message}</p>}</div>;
+  return <div className="start-exam-action"><AppButton className="primary-button primary-button--large" isDisabled={pending} onPress={() => void start()}>{pending ? "در حال آماده‌سازی…" : "شروع یا ادامهٔ آزمون"}</AppButton>{message && <p role="alert" className="form-error">{message}</p>}</div>;
 }

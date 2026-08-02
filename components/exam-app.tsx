@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertIcon, ArrowIcon, ClockIcon, FlagIcon } from "@/components/icons";
 import { QuestionCard } from "@/components/question-card";
 import { ResultsScreen } from "@/components/results-screen";
+import { AppModal } from "@/components/ui/app-modal";
+import { AppButton } from "@/components/ui/form-controls";
 import { WelcomeScreen } from "@/components/welcome-screen";
 import { htmlSyllabus, type ExamSyllabus } from "@/lib/exam-syllabi";
 import type {
@@ -406,9 +408,9 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
 
       {config.abandon && (
         <div className="exam-abandon">
-          <button className="abandon-button" type="button" onClick={() => setShowAbandonConfirm(true)} disabled={submitting}>
+          <AppButton className="abandon-button" isDisabled={submitting} onPress={() => setShowAbandonConfirm(true)} tone="danger-soft">
             انصراف از آزمون
-          </button>
+          </AppButton>
         </div>
       )}
 
@@ -479,83 +481,57 @@ export function ExamApp({ questions, config = DEFAULT_CONFIG }: ExamAppProps) {
           )}
 
           <nav className="question-nav" aria-label="پیمایش پرسش‌ها">
-            <button
+            <AppButton
               className="secondary-button"
-              type="button"
-              disabled={currentIndex === 0 || isExpired || submitting}
-              onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+              isDisabled={currentIndex === 0 || isExpired || submitting}
+              onPress={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+              tone="secondary"
             >
               <ArrowIcon className="arrow-back" />
               پرسش قبلی
-            </button>
+            </AppButton>
 
             {currentIndex < questions.length - 1 ? (
-              <button
+              <AppButton
                 className="primary-button"
-                type="button"
-                onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-                disabled={isExpired || submitting}
+                onPress={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
+                isDisabled={isExpired || submitting}
               >
                 پرسش بعدی
                 <ArrowIcon />
-              </button>
+              </AppButton>
             ) : (
-              <button className="submit-button" type="button" disabled={isExpired || submitting} onClick={() => setShowConfirm(true)}>
+              <AppButton className="submit-button" isDisabled={isExpired || submitting} onPress={() => setShowConfirm(true)}>
                 <FlagIcon />
                 ثبت نهایی آزمون
-              </button>
+              </AppButton>
             )}
           </nav>
 
           {currentIndex < questions.length - 1 && (
-            <button className="finish-link" type="button" disabled={isExpired || submitting} onClick={() => setShowConfirm(true)}>
+            <AppButton className="finish-link" isDisabled={isExpired || submitting} onPress={() => setShowConfirm(true)} tone="ghost">
               پایان و ثبت آزمون
-            </button>
+            </AppButton>
           )}
         </div>
       </div>
 
       {showConfirm && (
-        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setShowConfirm(false)}>
-          <section
-            className="confirm-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="confirm-title"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
+          <AppModal className="confirm-dialog" footer={<><AppButton className="secondary-button" onPress={() => setShowConfirm(false)} tone="secondary">بازگشت به آزمون</AppButton><AppButton className="submit-button" isDisabled={submitting} onPress={submitExam}>{submitting ? <span className="button-spinner" /> : <FlagIcon />}{submitting ? "در حال ثبت…" : "بله، ثبت شود"}</AppButton></>} isOpen onOpenChange={(isOpen) => { if (!isOpen) setShowConfirm(false); }} title="آزمون ثبت نهایی شود؟">
             <span className="confirm-dialog__icon"><FlagIcon /></span>
-            <h2 id="confirm-title">آزمون ثبت نهایی شود؟</h2>
             <p>
               پس از ثبت، امکان تغییر پاسخ‌ها وجود ندارد.
               {unansweredCount > 0 && (
                 <> هنوز <strong>{unansweredCount.toLocaleString("fa-IR")} پرسش</strong> بی‌پاسخ مانده است.</>
               )}
             </p>
-            <div>
-              <button className="secondary-button" type="button" onClick={() => setShowConfirm(false)}>
-                بازگشت به آزمون
-              </button>
-              <button className="submit-button" type="button" disabled={submitting} onClick={submitExam}>
-                {submitting ? <span className="button-spinner" /> : <FlagIcon />}
-                {submitting ? "در حال ثبت…" : "بله، ثبت شود"}
-              </button>
-            </div>
-          </section>
-        </div>
+          </AppModal>
       )}
       {showAbandonConfirm && config.abandon && (
-        <div className="dialog-backdrop" role="presentation" onMouseDown={() => setShowAbandonConfirm(false)}>
-          <section className="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="abandon-title" onMouseDown={(event) => event.stopPropagation()}>
+          <AppModal className="confirm-dialog" footer={<><AppButton className="secondary-button" onPress={() => setShowAbandonConfirm(false)} tone="secondary">بازگشت به آزمون</AppButton><AppButton className="abandon-button" onPress={abandonExam} tone="danger-soft">بله، انصراف می‌دهم</AppButton></>} isOpen onOpenChange={(isOpen) => { if (!isOpen) setShowAbandonConfirm(false); }} title="از آزمون انصراف می‌دهید؟">
             <span className="confirm-dialog__icon"><AlertIcon /></span>
-            <h2 id="abandon-title">از آزمون انصراف می‌دهید؟</h2>
             <p>پاسخ‌های فعلی حذف می‌شوند و تا ۲۴ ساعت آینده امکان شرکت دوباره در همین بخش را نخواهید داشت.</p>
-            <div>
-              <button className="secondary-button" type="button" onClick={() => setShowAbandonConfirm(false)}>بازگشت به آزمون</button>
-              <button className="abandon-button" type="button" onClick={abandonExam}>بله، انصراف می‌دهم</button>
-            </div>
-          </section>
-        </div>
+          </AppModal>
       )}
     </main>
   );

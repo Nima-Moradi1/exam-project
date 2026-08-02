@@ -1,6 +1,7 @@
 "use client";
 
 import { GoogleIcon } from "@/components/icons";
+import { AppButton, AppTextField } from "@/components/ui/form-controls";
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -40,12 +41,12 @@ export function LoginForm({ googleEnabled, adminLogin = false }: { googleEnabled
         void onSubmit(new FormData(event.currentTarget));
       }}
     >
-      <div className="auth-form__field"><label htmlFor="username">{adminLogin ? "نام کاربری مدیر" : "نام کاربری"}</label><input id="username" name="username" autoComplete="username" required minLength={3} /></div>
-      <div className="auth-form__field"><label htmlFor="password">رمز عبور</label><input id="password" name="password" type="password" autoComplete="current-password" required /></div>
+      <AppTextField fieldClassName="auth-form__field" id="username" label={adminLogin ? "نام کاربری مدیر" : "نام کاربری"} name="username" autoComplete="username" required minLength={3} />
+      <AppTextField fieldClassName="auth-form__field" id="password" label="رمز عبور" name="password" type="password" autoComplete="current-password" required />
       {loginError && <p role="alert" className="form-error">{loginError}</p>}
       <div className="auth-form__actions">
-        <button className="primary-button" disabled={pending} type="submit">{pending ? "در حال ورود…" : adminLogin ? "ورود به پنل مدیریت" : "ورود"}</button>
-        {googleEnabled && <button className="secondary-button" type="button" onClick={() => void signIn("google", { redirectTo: callbackUrl })}><GoogleIcon /> ادامه با گوگل</button>}
+        <AppButton className="primary-button" isDisabled={pending} type="submit">{pending ? "در حال ورود…" : adminLogin ? "ورود به پنل مدیریت" : "ورود"}</AppButton>
+        {googleEnabled && <AppButton className="secondary-button" tone="secondary" type="button" onPress={() => void signIn("google", { redirectTo: callbackUrl })}><GoogleIcon /> ادامه با گوگل</AppButton>}
       </div>
     </form>
   );

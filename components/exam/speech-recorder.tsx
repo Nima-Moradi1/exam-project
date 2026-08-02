@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AppButton } from "@/components/ui/form-controls";
 
 type Recording = { kind: "AUDIO_RECORDING"; url: string; durationSeconds: number; mimeType: string };
+const now = Date.now;
 
 export function SpeechRecorder({ attemptId, snapshotId, value, disabled, onChange, onBusyChange }: { attemptId: string; snapshotId: string; value: unknown; disabled: boolean; onChange: (value: Recording) => void; onBusyChange: (busy: boolean) => void }) {
   const recorder = useRef<MediaRecorder | null>(null);
@@ -26,7 +28,7 @@ export function SpeechRecorder({ attemptId, snapshotId, value, disabled, onChang
       instance.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
       instance.onstop = () => void upload(new Blob(chunks, { type: instance.mimeType || "audio/webm" }));
       recorder.current = instance;
-      startedAt.current = Date.now();
+      startedAt.current = now();
       setSeconds(0);
       instance.start();
       setState("recording");
@@ -38,7 +40,7 @@ export function SpeechRecorder({ attemptId, snapshotId, value, disabled, onChang
 
   function stop() {
     if (recorder.current?.state === "recording") {
-      setSeconds(Math.max(1, Math.round((Date.now() - startedAt.current) / 1_000)));
+      setSeconds(Math.max(1, Math.round((now() - startedAt.current) / 1_000)));
       recorder.current.stop();
       stream.current?.getTracks().forEach((track) => track.stop());
       setState("uploading");
@@ -47,7 +49,7 @@ export function SpeechRecorder({ attemptId, snapshotId, value, disabled, onChang
 
   async function upload(blob: Blob) {
     try {
-      const durationSeconds = Math.max(1, Math.round((Date.now() - startedAt.current) / 1_000));
+      const durationSeconds = Math.max(1, Math.round((now() - startedAt.current) / 1_000));
       const formData = new FormData();
       formData.set("snapshotId", snapshotId);
       formData.set("durationSeconds", String(durationSeconds));
@@ -65,9 +67,9 @@ export function SpeechRecorder({ attemptId, snapshotId, value, disabled, onChang
 
   useEffect(() => {
     if (state !== "recording") return;
-    const timer = window.setInterval(() => setSeconds(Math.max(1, Math.floor((Date.now() - startedAt.current) / 1_000))), 1_000);
+    const timer = window.setInterval(() => setSeconds(Math.max(1, Math.floor((now() - startedAt.current) / 1_000))), 1_000);
     return () => window.clearInterval(timer);
   }, [state]);
 
-  return <section className={`speech-recorder speech-recorder--${state}`} aria-live="polite"><div><span>پاسخ گفتاری</span><strong>{state === "recording" ? `در حال ضبط · ${seconds} ثانیه` : state === "uploading" ? "در حال ذخیرهٔ صدا…" : state === "ready" ? "پاسخ صوتی آماده است" : "پاسخ خود را ضبط کنید"}</strong></div>{state === "recording" ? <button type="button" className="secondary-button" onClick={stop}>پایان ضبط</button> : <button type="button" className="primary-button" onClick={() => void start()} disabled={disabled || state === "uploading"}>ضبط پاسخ</button>}{message && <p className={state === "error" ? "form-error" : "speech-recorder__success"}>{message}</p>}</section>;
+  return <section className={`speech-recorder speech-recorder--${state}`} aria-live="polite"><div><span>پاسخ گفتاری</span><strong>{state === "recording" ? `در حال ضبط · ${seconds} ثانیه` : state === "uploading" ? "در حال ذخیرهٔ صدا…" : state === "ready" ? "پاسخ صوتی آماده است" : "پاسخ خود را ضبط کنید"}</strong></div>{state === "recording" ? <AppButton className="secondary-button" onPress={stop} tone="secondary">پایان ضبط</AppButton> : <AppButton className="primary-button" isDisabled={disabled || state === "uploading"} onPress={() => void start()}>ضبط پاسخ</AppButton>}{message && <p className={state === "error" ? "form-error" : "speech-recorder__success"}>{message}</p>}</section>;
 }
