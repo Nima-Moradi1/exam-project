@@ -26,6 +26,7 @@ export default async function ProfilePage() {
   return (
     <main id="main-content" className="account-page profile-page page-shell">
       <section className="account-card profile-card" aria-labelledby="profile-title">
+        <Link className="account-back-link" href="/"><span aria-hidden="true">→</span> بازگشت به صفحهٔ اصلی</Link>
         <header className="profile-card__header">
           <div className="profile-avatar" aria-hidden="true">{initial}</div>
           <div>
