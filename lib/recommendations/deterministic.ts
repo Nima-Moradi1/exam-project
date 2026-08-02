@@ -28,12 +28,5 @@ export function selectDeterministicResources(candidates: RecommendationCandidate
       }
     }
   }
-  if (selected.length < limit) {
-    for (const candidate of candidates) {
-      if (selected.length >= limit || selected.some((item) => item.id === candidate.id)) continue;
-      if (candidate.locale !== locale && candidate.locale !== "en") continue;
-      selected.push(candidate);
-    }
-  }
   return selected.slice(0, limit);
 }

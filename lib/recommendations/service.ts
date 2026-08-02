@@ -22,7 +22,10 @@ const resourceDtoSchema = z.object({
   locale: z.string()
 });
 
+const RECOMMENDATION_VERSION = 2;
+
 const recommendationPayloadSchema = z.object({
+  version: z.literal(RECOMMENDATION_VERSION),
   summary: z.string().max(1_000),
   strengths: z.array(z.string().max(240)).max(8),
   weaknesses: z.array(z.string().max(240)).max(8),
@@ -53,12 +56,24 @@ type RecommendationInput = {
 function deterministicPayload(locale: string, resources: Array<z.infer<typeof resourceDtoSchema>>) {
   const persian = locale.startsWith("fa");
   return {
-    summary: persian ? "این منابع بر اساس سطح آزمون و مباحثی که بیشترین نیاز به مرور دارند انتخاب شده‌اند." : "These resources were selected for the exam level and the topics that need the most review.",
+    version: RECOMMENDATION_VERSION,
+    summary: resources.length
+      ? persian ? "این منابع فقط از میان موضوعاتِ همین آزمون و بر پایهٔ پاسخ‌هایی که نیاز به مرور دارند انتخاب شده‌اند." : "These resources match this exam's topics and the answers that need the most review."
+      : persian ? "برای موضوعاتِ این آزمون هنوز منبع تأییدشده‌ای در کتابخانه ثبت نشده است؛ مسیر مرور شما همچنان بر اساس پاسخ‌ها آماده شده است." : "No verified resource for this exam's topics is in the library yet; your review plan is still based on your answers.",
     strengths: [],
     weaknesses: [],
     studyPlan: [],
     resources
   };
+}
+
+function topicFamily(slug: string) {
+  const first = slug.toLowerCase().split("-")[0] ?? slug;
+  return first === "postgres" || first === "sql" ? "database" : first;
+}
+
+function topicsAreRelated(left: string, right: string) {
+  return left === right || topicFamily(left) === topicFamily(right);
 }
 
 function candidateForPrompt(candidate: RecommendationCandidate, topicNames: Map<string, string>) {
@@ -80,6 +95,8 @@ export async function createPersonalizedRecommendations(input: RecommendationInp
   const topicIds = [...new Set([...input.weaknesses.map((topic) => topic.topicId), ...links.map((link) => link.topicId)])];
   const topicRows = topicIds.length ? await db.select({ id: topics.id, name: topics.name }).from(topics).where(inArray(topics.id, topicIds)) : [];
   const topicNames = new Map(topicRows.map((topic) => [topic.id, topic.name]));
+  const targetTopicIds = new Set(input.weaknesses.map((topic) => topic.topicId));
+  const topicSlugs = new Map(topicRows.map((topic) => [topic.id, topic.name.toLowerCase().replace(/\s+/g, "-")]));
   const candidates: RecommendationCandidate[] = resources.map((resource) => ({
     id: resource.id,
     title: resource.title,
@@ -87,8 +104,8 @@ export async function createPersonalizedRecommendations(input: RecommendationInp
     type: resource.type,
     url: resource.url,
     locale: resource.locale,
-    topicIds: links.filter((link) => link.resourceId === resource.id).map((link) => link.topicId)
-  }));
+    topicIds: [...targetTopicIds].filter((targetTopicId) => links.filter((link) => link.resourceId === resource.id).some((link) => topicsAreRelated(topicSlugs.get(link.topicId) ?? link.topicId, topicSlugs.get(targetTopicId) ?? targetTopicId)))
+  })).filter((candidate) => candidate.topicIds.length > 0);
   const deterministic = selectDeterministicResources(candidates, input.weaknesses, input.locale);
   const fallback = deterministic.map(({ id, title, description, type, url, locale }) => ({ id, title, description, type, url, locale }));
   const eligibleResources = candidates
@@ -98,7 +115,7 @@ export async function createPersonalizedRecommendations(input: RecommendationInp
   const model = getConfiguredAiModel();
   const environment = getServerEnvironment();
 
-  if (!model || !fallback.length) {
+  if (!model) {
     await db.insert(attemptRecommendations).values({ attemptId: input.attemptId, source: "DETERMINISTIC", recommendationJson: deterministicPayload(input.locale, fallback) });
     return;
   }
@@ -107,7 +124,7 @@ export async function createPersonalizedRecommendations(input: RecommendationInp
     const { output } = await generateText({
       model,
       output: Output.object({ schema: aiRecommendationSchema, name: "exam_recommendations" }),
-      system: "You are a learning coach. Recommend only IDs from the supplied catalog. Never invent resources, URLs, titles, providers, or facts. Personalize the summary and plan to the supplied score, exam level, and topic performance. Return the text in the requested locale.",
+      system: "You are a learning coach. Personalize the summary and study plan from the score and topic performance. Recommend only IDs from the supplied catalog: every catalog resource has already been verified as relevant to this exact exam. Never invent resources, URLs, titles, providers, or facts. If the catalog is empty, return no resource IDs. Return all learner-facing text in the requested locale.",
       prompt: JSON.stringify({
         requestedLocale: input.locale,
         exam: { title: input.examTitle, difficulty: input.examDifficulty },
@@ -126,7 +143,7 @@ export async function createPersonalizedRecommendations(input: RecommendationInp
     });
     const byId = new Map(eligibleResources.map((resource) => [resource.id, resource]));
     const selected = [...new Set(output.recommendedResourceIds)].map((id) => byId.get(id)).filter((resource): resource is z.infer<typeof resourceDtoSchema> => Boolean(resource)).slice(0, 6);
-    const payload = recommendationPayloadSchema.parse({ ...output, resources: selected.length ? selected : fallback });
+    const payload = recommendationPayloadSchema.parse({ version: RECOMMENDATION_VERSION, ...output, resources: selected.length ? selected : fallback });
     await db.insert(attemptRecommendations).values({
       attemptId: input.attemptId,
       source: "AI",

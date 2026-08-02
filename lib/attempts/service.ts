@@ -64,6 +64,24 @@ function collectTopicWeaknesses(snapshots: Array<typeof attemptQuestionSnapshots
   return [...performance.values()];
 }
 
+function collectStoredTopicWeaknesses(snapshots: Array<typeof attemptQuestionSnapshots.$inferSelect>, answers: Array<typeof attemptAnswers.$inferSelect>): TopicWeakness[] {
+  const performance = new Map<string, TopicWeakness>();
+  const answersBySnapshot = new Map(answers.map((answer) => [answer.snapshotId, answer]));
+  for (const snapshot of snapshots) {
+    const topicIds = (snapshot.gradingSnapshot as unknown as GradingSnapshot).topicIds ?? [];
+    const answer = answersBySnapshot.get(snapshot.id);
+    for (const topicId of topicIds) {
+      const current = performance.get(topicId) ?? { topicId, availablePoints: 0, awardedPoints: 0, incorrectCount: 0, unansweredCount: 0 };
+      current.availablePoints += snapshot.maxPoints;
+      current.awardedPoints += answer?.pointsAwarded ?? 0;
+      if (answer?.status === "INCORRECT") current.incorrectCount += 1;
+      if (!answer || answer.status === "UNANSWERED") current.unansweredCount += 1;
+      performance.set(topicId, current);
+    }
+  }
+  return [...performance.values()];
+}
+
 function asDto(input: {
   attempt: typeof examAttempts.$inferSelect;
   exam: typeof exams.$inferSelect;
@@ -273,12 +291,36 @@ export async function getAttemptResult(attemptId: string, actorId?: string, acto
   if (!attempt) throw new Error("NOT_FOUND");
   assertOwnershipOrPermission({ ownerId: attempt.userId, actorId: actor.id, actorRole: actor.role as Role, permission: "attempt:read:any" });
   if (!["COMPLETED", "PENDING_REVIEW"].includes(attempt.status)) throw new Error("RESULT_NOT_READY");
-  const [exam, snapshots, answers, recommendation] = await Promise.all([
+  const [exam, snapshots, answers, storedRecommendation] = await Promise.all([
     db.select().from(exams).where(eq(exams.id, attempt.examId)).limit(1).then((rows) => rows[0]),
     db.select().from(attemptQuestionSnapshots).where(eq(attemptQuestionSnapshots.attemptId, attemptId)).orderBy(asc(attemptQuestionSnapshots.position)),
     db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId)),
     getRecommendationsForAttempt(attemptId)
   ]);
+  // Older recommendation snapshots are intentionally ignored after a relevance
+  // policy update. Rebuild them once from immutable answers instead of showing
+  // unrelated resources from the old global-catalog fallback.
+  let recommendation = storedRecommendation;
+  if (!recommendation && exam) {
+    try {
+      await createPersonalizedRecommendations({
+        attemptId,
+        locale: exam.locale,
+        examTitle: exam.title,
+        examDifficulty: exam.difficulty,
+        scorePercent: attempt.scorePercent ?? 0,
+        correctCount: attempt.correctCount,
+        incorrectCount: attempt.incorrectCount,
+        partialCount: attempt.partialCount,
+        unansweredCount: attempt.unansweredCount,
+        pendingReviewCount: attempt.pendingReviewCount,
+        weaknesses: collectStoredTopicWeaknesses(snapshots, answers)
+      });
+      recommendation = await getRecommendationsForAttempt(attemptId);
+    } catch (error) {
+      console.error("Could not refresh stale attempt recommendations", error);
+    }
+  }
   const answerBySnapshot = new Map(answers.map((answer) => [answer.snapshotId, answer]));
   return {
     attempt: { id: attempt.id, status: attempt.status, scorePercent: attempt.scorePercent, scorePoints: attempt.scorePoints, maxPoints: attempt.maxPoints, message: attempt.resultMessage, locale: exam?.locale ?? "fa", direction: exam?.direction ?? "AUTO" },

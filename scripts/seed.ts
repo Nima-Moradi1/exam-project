@@ -220,29 +220,34 @@ async function seedSampleExam(categoryMap: CategoryMap, input: SeedExam) {
 
 async function seedResources() {
   const resources = [
-    ["MDN HTML guides", "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content", "DOCUMENTATION", "html"],
-    ["MDN CSS guides", "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics", "DOCUMENTATION", "css"],
-    ["TypeScript Handbook", "https://www.typescriptlang.org/docs/handbook/intro.html", "DOCUMENTATION", "typescript-basics"],
-    ["React Learn", "https://react.dev/learn", "DOCUMENTATION", "react-components"],
-    ["Next.js Learn", "https://nextjs.org/learn", "COURSE", "nextjs"],
-    ["PostgreSQL Tutorial", "https://www.postgresql.org/docs/current/tutorial.html", "DOCUMENTATION", "postgresql"],
-    ["Docker Get Started", "https://docs.docker.com/get-started/", "DOCUMENTATION", "docker"],
-    ["Kubernetes Basics", "https://kubernetes.io/docs/tutorials/kubernetes-basics/", "DOCUMENTATION", "kubernetes"],
-    ["British Council IELTS preparation", "https://takeielts.britishcouncil.org/take-ielts/prepare", "EXERCISE", "ielts-reading"],
-    ["LearnEnglish video series", "https://learnenglish.britishcouncil.org/free-resources/general/video-series", "VIDEO", "ielts-reading"],
-    ["LearnEnglish podcasts", "https://learnenglish.britishcouncil.org/free-resources/general/audio-series/podcasts/s3", "PODCAST", "ielts-reading"],
-    ["Film English viewing guides", "https://film-english.com/", "FILM", "ielts-reading"],
-    ["Alice's Adventures in Wonderland", "https://www.gutenberg.org/ebooks/11", "BOOK", "ielts-reading"]
-    , ["APA Psychology topics", "https://www.apa.org/topics", "DOCUMENTATION", "psychology"]
-    , ["OpenStax Psychology 2e", "https://openstax.org/details/books/psychology-2e", "BOOK", "psychology"]
+    ["MDN HTML guides", "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Structuring_content", "DOCUMENTATION", ["html"]],
+    ["MDN CSS guides", "https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics", "DOCUMENTATION", ["css"]],
+    ["TypeScript Handbook", "https://www.typescriptlang.org/docs/handbook/intro.html", "DOCUMENTATION", ["typescript-basics"]],
+    ["React Learn", "https://react.dev/learn", "DOCUMENTATION", ["react-components"]],
+    ["Next.js Learn", "https://nextjs.org/learn", "COURSE", ["nextjs"]],
+    ["PostgreSQL Tutorial", "https://www.postgresql.org/docs/current/tutorial.html", "DOCUMENTATION", ["postgresql", "postgresql-modeling", "postgresql-indexing", "postgresql-transactions", "sql-basics"]],
+    ["PostgreSQL Constraints", "https://www.postgresql.org/docs/current/ddl-constraints.html", "DOCUMENTATION", ["postgresql-modeling"]],
+    ["PostgreSQL Indexes", "https://www.postgresql.org/docs/current/indexes.html", "DOCUMENTATION", ["postgresql-indexing"]],
+    ["PostgreSQL Transactions", "https://www.postgresql.org/docs/current/tutorial-transactions.html", "DOCUMENTATION", ["postgresql-transactions"]],
+    ["Docker Get Started", "https://docs.docker.com/get-started/", "DOCUMENTATION", ["docker"]],
+    ["Kubernetes Basics", "https://kubernetes.io/docs/tutorials/kubernetes-basics/", "DOCUMENTATION", ["kubernetes"]],
+    ["British Council IELTS preparation", "https://takeielts.britishcouncil.org/take-ielts/prepare", "EXERCISE", ["ielts-reading"]],
+    ["LearnEnglish video series", "https://learnenglish.britishcouncil.org/free-resources/general/video-series", "VIDEO", ["ielts-reading"]],
+    ["LearnEnglish podcasts", "https://learnenglish.britishcouncil.org/free-resources/general/audio-series/podcasts/s3", "PODCAST", ["ielts-reading"]],
+    ["Film English viewing guides", "https://film-english.com/", "FILM", ["ielts-reading"]],
+    ["Alice's Adventures in Wonderland", "https://www.gutenberg.org/ebooks/11", "BOOK", ["ielts-reading"]],
+    ["APA Psychology topics", "https://www.apa.org/topics", "DOCUMENTATION", ["psychology"]],
+    ["OpenStax Psychology 2e", "https://openstax.org/details/books/psychology-2e", "BOOK", ["psychology"]]
   ] as const;
-  for (const [title, url, type, topicSlug] of resources) {
+  for (const [title, url, type, topicSlugs] of resources) {
     const existing = await db.select({ id: learningResources.id }).from(learningResources).where(eq(learningResources.url, url)).limit(1);
     const resourceId = existing[0]?.id ?? (await db.insert(learningResources).values({ title, description: `Curated learning resource: ${title}.`, type, url, locale: "en", isActive: true }).returning({ id: learningResources.id }))[0]?.id;
-    const topicId = await ensureTopic(topicSlug);
-    if (resourceId && topicId) {
-      const linked = await db.select({ resourceId: resourceTopics.resourceId }).from(resourceTopics).where(and(eq(resourceTopics.resourceId, resourceId), eq(resourceTopics.topicId, topicId))).limit(1);
-      if (!linked.length) await db.insert(resourceTopics).values({ resourceId, topicId, weight: 1 });
+    for (const topicSlug of topicSlugs) {
+      const topicId = await ensureTopic(topicSlug);
+      if (resourceId && topicId) {
+        const linked = await db.select({ resourceId: resourceTopics.resourceId }).from(resourceTopics).where(and(eq(resourceTopics.resourceId, resourceId), eq(resourceTopics.topicId, topicId))).limit(1);
+        if (!linked.length) await db.insert(resourceTopics).values({ resourceId, topicId, weight: 1 });
+      }
     }
   }
 }
