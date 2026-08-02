@@ -6,6 +6,8 @@ import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+const Required = ({ children }: { children: string }) => <>{children} <span className="required-mark" aria-hidden="true">*</span></>;
+
 function getSafeCallbackUrl(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//") ? value : "/";
 }
@@ -41,8 +43,8 @@ export function LoginForm({ googleEnabled, adminLogin = false }: { googleEnabled
         void onSubmit(new FormData(event.currentTarget));
       }}
     >
-      <AppTextField fieldClassName="auth-form__field" id="username" label={adminLogin ? "نام کاربری مدیر" : "نام کاربری"} name="username" autoComplete="username" required minLength={3} />
-      <AppTextField fieldClassName="auth-form__field" id="password" label="رمز عبور" name="password" type="password" autoComplete="current-password" required />
+      <AppTextField fieldClassName="auth-form__field" id="username" label={<Required>{adminLogin ? "نام کاربری مدیر" : "نام کاربری"}</Required>} name="username" autoComplete="username" required minLength={3} />
+      <AppTextField fieldClassName="auth-form__field" id="password" label={<Required>رمز عبور</Required>} name="password" type="password" autoComplete="current-password" required />
       {loginError && <p role="alert" className="form-error">{loginError}</p>}
       <div className="auth-form__actions">
         <AppButton className="primary-button" isDisabled={pending} type="submit">{pending ? "در حال ورود…" : adminLogin ? "ورود به پنل مدیریت" : "ورود"}</AppButton>

@@ -3201,6 +3201,11 @@ button:not(:disabled) {
   font-size: .72rem;
   line-height: 1.6;
 }
+.auth-form__field--full,
+.auth-form--signup .auth-form__google { grid-column: 1 / -1; }
+.auth-form--signup > .primary-button { inline-size: 100%; }
+.required-mark { color: var(--danger, #df4f4f); font-weight: 900; }
+.form-hint--terms { color: var(--accent); }
 
 .auth-footer {
   margin-block: 16px 0;

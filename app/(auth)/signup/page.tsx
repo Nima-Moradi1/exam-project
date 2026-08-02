@@ -9,7 +9,7 @@ export default function SignupPage() {
         <span className="eyebrow"><i /> شروع مسیر</span>
         <h1 id="signup-title">ساخت حساب کاربری</h1>
         <p>حساب شما تاریخچهٔ آزمون‌ها و پیشنهادهای آموزشی را نگه می‌دارد.</p>
-        <SignupForm />
+        <SignupForm googleEnabled={Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)} />
       </section>
     </main>
   );
