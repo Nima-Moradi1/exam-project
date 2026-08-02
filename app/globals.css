@@ -101,6 +101,16 @@
   --shadow-md: 0 18px 50px rgb(0 0 0 / 0.28);
 }
 
+/* A quieter graphite surface keeps every editable control legible in dark mode. */
+.dark :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  background-color: #141b17 !important;
+  border-color: #35443b !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035), 0 1px 1px rgb(0 0 0 / 0.16);
+}
+
+.dark :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select):hover:not(:disabled) { border-color: #496356 !important; background-color: #17211c !important; }
+.dark :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus { border-color: #73aa8e !important; background-color: #18231d !important; box-shadow: 0 0 0 3px rgb(115 170 142 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.045); }
+
 * {
   box-sizing: border-box;
 }
