@@ -167,6 +167,19 @@ export async function startAttempt(examId: string): Promise<PublicAttemptDto> {
   return getAttemptForUser(attemptId, user.id, user.role as Role);
 }
 
+export async function getExamEntryState(examId: string, userId: string) {
+  const latest = await getDb().select({
+    id: examAttempts.id,
+    status: examAttempts.status,
+    lastActivityAt: examAttempts.lastActivityAt,
+    scorePercent: examAttempts.scorePercent
+  }).from(examAttempts).where(and(eq(examAttempts.examId, examId), eq(examAttempts.userId, userId))).orderBy(desc(examAttempts.createdAt)).limit(1).then((rows) => rows[0]);
+  if (!latest) return { kind: "START" as const };
+  if (latest.status === "IN_PROGRESS") return { kind: "CONTINUE" as const, attemptId: latest.id, lastSavedAt: latest.lastActivityAt.toISOString() };
+  if (["COMPLETED", "PENDING_REVIEW", "SUBMITTED"].includes(latest.status)) return { kind: latest.status === "PENDING_REVIEW" ? "REVIEW" as const : "RESULT" as const, attemptId: latest.id, scorePercent: latest.scorePercent };
+  return { kind: "START" as const };
+}
+
 export async function getAttemptForUser(attemptId: string, actorId?: string, actorRole?: Role): Promise<PublicAttemptDto> {
   const actor = actorId && actorRole ? { id: actorId, role: actorRole } : await requireActiveUser();
   const db = getDb();
@@ -215,11 +228,10 @@ export async function submitAttempt(attemptId: string, finalAnswers: Array<{ sna
   const attempt = await db.select().from(examAttempts).where(eq(examAttempts.id, attemptId)).limit(1).then((rows) => rows[0]);
   if (!attempt || attempt.userId !== user.id) throw new Error("NOT_FOUND");
   if (["COMPLETED", "PENDING_REVIEW", "SUBMITTED"].includes(attempt.status)) return getAttemptResult(attemptId, user.id, user.role as Role);
-  if (attempt.expiresAt <= new Date()) {
-    await expireIfNeeded(attempt);
-    throw new Error("ATTEMPT_EXPIRED");
-  }
-  if (finalAnswers.length) await saveAnswers(attemptId, finalAnswers);
+  const expired = attempt.expiresAt <= new Date() || attempt.status === "EXPIRED";
+  // Once time expires, grade only server-confirmed answers. Client-only pending
+  // data is intentionally not trusted after the authoritative deadline.
+  if (!expired && finalAnswers.length) await saveAnswers(attemptId, finalAnswers);
   const [snapshots, answers, exam] = await Promise.all([
     db.select().from(attemptQuestionSnapshots).where(eq(attemptQuestionSnapshots.attemptId, attemptId)).orderBy(asc(attemptQuestionSnapshots.position)),
     db.select().from(attemptAnswers).where(eq(attemptAnswers.attemptId, attemptId)),
@@ -234,7 +246,7 @@ export async function submitAttempt(attemptId: string, finalAnswers: Array<{ sna
   // The Neon HTTP driver provides atomic batches, but does not support
   // interactive transaction callbacks. Keep every final grading write together.
   await db.batch([
-    db.update(examAttempts).set({ status: finalStatus, submittedAt: finalizedAt, completedAt: finalStatus === "COMPLETED" ? finalizedAt : null, scorePoints: result.awardedPoints, scorePercent: Math.round(result.scorePercent), correctCount: result.correctCount, incorrectCount: result.incorrectCount, partialCount: result.partialCount, unansweredCount: result.unansweredCount, pendingReviewCount: result.pendingReviewCount, resultMessage: deterministicResultMessage(result.scorePercent, exam.locale), durationUsedSeconds: Math.max(0, Math.round((Date.now() - attempt.startedAt.getTime()) / 1_000)), updatedAt: finalizedAt }).where(eq(examAttempts.id, attemptId)),
+    db.update(examAttempts).set({ status: finalStatus, submittedAt: finalizedAt, completedAt: finalStatus === "COMPLETED" ? finalizedAt : null, scorePoints: result.awardedPoints, scorePercent: Math.round(result.scorePercent), correctCount: result.correctCount, incorrectCount: result.incorrectCount, partialCount: result.partialCount, unansweredCount: result.unansweredCount, pendingReviewCount: result.pendingReviewCount, resultMessage: deterministicResultMessage(result.scorePercent, exam.locale), durationUsedSeconds: Math.max(0, Math.min(exam.durationSeconds, Math.round((Date.now() - attempt.startedAt.getTime()) / 1_000))), updatedAt: finalizedAt }).where(eq(examAttempts.id, attemptId)),
     ...result.items.map((item) => db.update(attemptAnswers).set({ status: item.status, pointsAwarded: item.pointsAwarded, gradedAt: finalizedAt, updatedAt: finalizedAt }).where(and(eq(attemptAnswers.attemptId, attemptId), eq(attemptAnswers.snapshotId, item.snapshotId)))),
     ...(topicWeaknesses.length ? [db.insert(attemptTopicPerformance).values(topicWeaknesses.map((topic) => ({
       attemptId,
@@ -323,7 +335,7 @@ export async function getAttemptResult(attemptId: string, actorId?: string, acto
   }
   const answerBySnapshot = new Map(answers.map((answer) => [answer.snapshotId, answer]));
   return {
-    attempt: { id: attempt.id, status: attempt.status, scorePercent: attempt.scorePercent, scorePoints: attempt.scorePoints, maxPoints: attempt.maxPoints, message: attempt.resultMessage, locale: exam?.locale ?? "fa", direction: exam?.direction ?? "AUTO" },
+    attempt: { id: attempt.id, status: attempt.status, scorePercent: attempt.scorePercent, scorePoints: attempt.scorePoints, maxPoints: attempt.maxPoints, passingScorePercent: exam?.passingScorePercent ?? 60, message: attempt.resultMessage, locale: exam?.locale ?? "fa", direction: exam?.direction ?? "AUTO" },
     recommendation,
     items: snapshots.map((snapshot) => {
       const publicSnapshot = asPublicQuestion(snapshot);

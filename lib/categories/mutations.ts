@@ -1,7 +1,7 @@
 "use server";
 
 import { and, asc, count, eq, isNull } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 import { writeAuditLog } from "@/lib/audit/service";
 import { requirePermission } from "@/lib/auth/guards";
@@ -13,6 +13,8 @@ import { categoryInputSchema, categoryMoveSchema, categoryReorderSchema } from "
 type MutationResult = { ok: true; id?: string } | { ok: false; code: string; message: string };
 
 function invalidateCategories() {
+  updateTag("public-categories");
+  updateTag("public-exams");
   revalidatePath("/");
   revalidatePath("/categories", "layout");
   revalidatePath("/admin/categories", "layout");

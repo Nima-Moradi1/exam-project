@@ -10,6 +10,7 @@ type NavigationLinkProps = {
   className?: string;
   onNavigate?: () => void;
   "aria-label"?: string;
+  "aria-current"?: "page";
 };
 
 export function NavigationLink({ href, children, className, onNavigate, ...props }: NavigationLinkProps) {

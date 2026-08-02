@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { examAttempts, exams, users } from "@/lib/db/schema";
+import { formatNumber } from "@/lib/exams/presentation";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.user?.id) return null;
-  const profile = await getDb().select({
+  const db = getDb();
+  const [profile, latestAttempt] = await Promise.all([db.select({
     displayName: users.displayName,
     username: users.username,
     email: users.email,
@@ -18,7 +20,7 @@ export default async function ProfilePage() {
     preferredLocale: users.preferredLocale,
     timezone: users.timezone,
     createdAt: users.createdAt
-  }).from(users).where(eq(users.id, session.user.id)).limit(1).then((rows) => rows[0]);
+  }).from(users).where(eq(users.id, session.user.id)).limit(1).then((rows) => rows[0]), db.select({ id: examAttempts.id, status: examAttempts.status, scorePercent: examAttempts.scorePercent, title: exams.title, lastActivityAt: examAttempts.lastActivityAt }).from(examAttempts).innerJoin(exams, eq(examAttempts.examId, exams.id)).where(eq(examAttempts.userId, session.user.id)).orderBy(desc(examAttempts.createdAt)).limit(1).then((rows) => rows[0])]);
   if (!profile) return null;
   const name = profile.displayName || profile.username || profile.email;
   const initial = name.trim().slice(0, 1).toLocaleUpperCase("fa-IR");
@@ -42,6 +44,7 @@ export default async function ProfilePage() {
           {profile.timezone && <div><dt>منطقهٔ زمانی</dt><dd dir="ltr">{profile.timezone}</dd></div>}
           {profile.bio && <div className="profile-details__bio"><dt>دربارهٔ من</dt><dd>{profile.bio}</dd></div>}
         </dl>
+        {latestAttempt && <section className="continue-learning" aria-labelledby="continue-learning-title"><span className="eyebrow"><i /> ادامهٔ یادگیری</span><h2 id="continue-learning-title">{latestAttempt.status === "IN_PROGRESS" ? "تلاش فعال شما آمادهٔ ادامه است" : "آخرین نتیجهٔ شما"}</h2><p dir="auto">{latestAttempt.title}</p>{latestAttempt.status === "IN_PROGRESS" ? <Link className="primary-button" href={`/attempts/${latestAttempt.id}`}>ادامهٔ تلاش</Link> : <Link className="secondary-button" href={`/attempts/${latestAttempt.id}/results`}>{latestAttempt.scorePercent === null ? "مشاهدهٔ وضعیت بررسی" : `مشاهدهٔ نتیجهٔ ${formatNumber(latestAttempt.scorePercent)}٪`}</Link>}</section>}
         <nav className="account-actions" aria-label="مدیریت حساب">
           <Link className="profile-action profile-action--primary" href="/profile/edit"><span>ویرایش پروفایل</span><small>نام، معرفی و زبان</small><b aria-hidden="true">←</b></Link>
           <Link className="profile-action" href="/profile/security"><span>امنیت حساب</span><small>رمز عبور و ورود</small><b aria-hidden="true">←</b></Link>
