@@ -9,7 +9,8 @@ const fallbackExams = [
     label: "آزمون HTML",
     category: "مبانی ساخت صفحات وب",
     description: "ساختار سند، تگ‌های معنایی، فرم‌ها و رسانه‌ها را در یک آزمون کامل مرور کن.",
-    detail: "۳۰ پرسش · ۳۵ دقیقه",
+    duration: "۳۵ دقیقه",
+    difficulty: "متوسط",
     accent: "coral"
   },
   {
@@ -17,7 +18,8 @@ const fallbackExams = [
     label: "آزمون‌های CSS",
     category: "طراحی و چیدمان رابط",
     description: "دو بخش کاربردی از انتخاب‌کننده‌ها تا چیدمان، رسپانسیو و انیمیشن پیش روی توست.",
-    detail: "۲ بخش · هر بخش ۴۰ پرسش",
+    duration: "۴۰ دقیقه",
+    difficulty: "متوسط",
     accent: "mint"
   }
 ] as const;
@@ -32,7 +34,8 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
     category: exam.categoryName, categorySlug: exam.categorySlug,
     level: exam.levelName ?? "عمومی", levelSlug: exam.levelSlug ?? "general",
     description: exam.shortDescription,
-    detail: `${Math.ceil(exam.durationSeconds / 60)} دقیقه · ${exam.difficulty}`,
+    duration: `${Math.ceil(exam.durationSeconds / 60)} دقیقه`,
+    difficulty: exam.difficulty,
     accent: getExamCardTheme(exam.slug, exam.difficulty)
   })) ?? fallbackExams.map((exam) => ({ ...exam, categorySlug: exam.category === "مبانی ساخت صفحات وب" ? "html" : "css", level: "Frontend", levelSlug: "frontend" }));
   const learningPaths = exams.reduce<LearningPath[]>((paths, exam, index) => {
