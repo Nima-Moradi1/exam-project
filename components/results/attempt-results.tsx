@@ -76,7 +76,6 @@ export function AttemptResults({ result }: { result: { attempt: { scorePercent: 
     const index = visible.findIndex((item) => item.snapshotId === snapshotId);
     if (index < 0) return;
     setActiveIndex(index);
-    requestAnimationFrame(() => document.getElementById("details-title")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
@@ -126,7 +125,7 @@ export function AttemptResults({ result }: { result: { attempt: { scorePercent: 
     </section>}
 
     <section className="result-status-sheet" aria-labelledby="status-sheet-title">
-      <div className="result-status-sheet__top"><SectionHeading icon={<ListChecks />} eyebrow="مرور سریع" title="پاسخ‌برگ فشرده" description="روی هر شماره بزنید تا به پاسخ تشریحی همان پرسش بروید." id="status-sheet-title" /><AppSelect className="result-status-sheet__filter" label="نمایش پاسخ‌ها" onChange={(value) => { setFilter(value as typeof filter); setActiveIndex(0); }} options={[{ value: "ALL", label: "همهٔ پاسخ‌ها" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))]} value={filter} /></div>
+      <div className="result-status-sheet__top"><SectionHeading icon={<ListChecks />} eyebrow="مرور سریع" title="پاسخ‌برگ فشرده" description="هر شماره پاسخ همان پرسش را داخل اسلایدر انتخاب می‌کند، بدون جابه‌جایی صفحه." id="status-sheet-title" /><AppSelect className="result-status-sheet__filter" label="نمایش پاسخ‌ها" onChange={(value) => { setFilter(value as typeof filter); setActiveIndex(0); }} options={[{ value: "ALL", label: "همهٔ پاسخ‌ها" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))]} value={filter} /></div>
       <div className="status-legend" aria-label="راهنمای رنگ وضعیت‌ها"><span className="status-legend__correct">درست</span><span className="status-legend__incorrect">نادرست</span><span className="status-legend__partial">نیمه‌درست</span><span className="status-legend__empty">بی‌پاسخ</span></div>
       <div className="status-grid">{result.items.map((item) => <a key={item.snapshotId} href="#details-title" onClick={(event) => { event.preventDefault(); showAnswer(item.snapshotId); }} aria-label={`نمایش پرسش ${item.position}، ${labels[item.status]}`} className={`status status--${item.status.toLowerCase()}`}><b>{item.position}</b><span>{labels[item.status]}</span></a>)}</div>
     </section>
