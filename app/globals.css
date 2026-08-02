@@ -2754,6 +2754,7 @@ button:not(:disabled) {
 .attempt-palette { display: grid; grid-template-columns: repeat(3, 30px); align-content: flex-start; gap: 7px; height: fit-content; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
 .attempt-layout--dense .attempt-palette { grid-template-columns: repeat(4, 30px); }
 .attempt-palette button { inline-size: 30px; block-size: 30px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-raised); }
+.attempt-palette button.is-answered:not(.is-current) { color: var(--green-dark); border-color: color-mix(in srgb, var(--green) 62%, var(--line)); background: var(--green-soft); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--green) 65%, transparent); }
 .attempt-palette button.is-current { color: #fff; border-color: var(--green); background: var(--green); }
 .attempt-question { padding: clamp(20px, 4vw, 40px); }
 .attempt-question > h1 { margin-block: 6px 22px; font-size: clamp(1.25rem, 3vw, 1.8rem); }
