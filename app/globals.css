@@ -2890,8 +2890,9 @@ button:not(:disabled) {
   }
 
   .site-header--condensed .site-header__inner {
+    inline-size: min(885px, calc(100% - var(--content-inline-gutter-double)));
     min-block-size: 60px;
-    margin-block: 11px;
+    margin: 11px auto;
     padding-inline: 16px;
     pointer-events: auto;
     border: 1px solid color-mix(in srgb, var(--line-strong) 60%, transparent);
