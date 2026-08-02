@@ -2161,8 +2161,9 @@ button:not(:disabled) {
 
 .exam-discovery { display: grid; gap: 24px; }
 .exam-path-tabs, .exam-filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.exam-path-tabs { padding: 6px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-soft); }
-.exam-path-tabs button { flex: 1 1 180px; min-block-size: 42px; padding: 8px 15px; color: var(--text-soft); border: 1px solid transparent; border-radius: 10px; background: transparent; font-size: .8rem; font-weight: 900; }
+.exam-path-tabs { flex-wrap: nowrap; overflow-x: auto; padding: 6px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-soft); scrollbar-width: none; }
+.exam-path-tabs::-webkit-scrollbar { display: none; }
+.exam-path-tabs button { flex: 0 0 auto; min-inline-size: 160px; min-block-size: 42px; padding: 8px 15px; color: var(--text-soft); border: 1px solid transparent; border-radius: 10px; background: transparent; font-size: .8rem; font-weight: 900; }
 .exam-path-tabs button.is-active { color: #fff; border-color: var(--green); background: var(--green); box-shadow: var(--shadow-sm); }
 .exam-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; padding: 17px; border: 1px solid var(--line); border-radius: 16px; background: color-mix(in srgb, var(--surface-soft) 68%, var(--surface)); }
 .exam-filters > div { display: grid; gap: 8px; }

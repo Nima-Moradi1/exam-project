@@ -37,8 +37,8 @@ export function ExamHub({ discovery }: { discovery?: { rootCategories: Array<{ n
   })) ?? fallbackExams.map((exam) => ({ ...exam, categorySlug: exam.category === "مبانی ساخت صفحات وب" ? "html" : "css", level: "Frontend", levelSlug: "frontend" }));
   const learningPaths = exams.reduce<LearningPath[]>((paths, exam, index) => {
     const source = discovery?.publishedExams[index];
-    const slug = source?.pathSlug ?? "software-engineering";
-    const name = source?.pathName ?? "Software Engineering";
+    const slug = source?.pathSlug ?? "general";
+    const name = source?.pathName ?? "عمومی";
     const path = paths.find((entry) => entry.slug === slug);
     if (path) {
       path.exams.push(exam);

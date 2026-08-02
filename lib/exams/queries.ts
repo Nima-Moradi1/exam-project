@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, asc, eq, isNull } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
 
 import { getDb } from "@/lib/db";
 import { categories, examOutlineItems, exams, questionAcceptedAnswers, questionOptions, questionTopics, questions } from "@/lib/db/schema";
@@ -17,12 +16,26 @@ export async function getPublicExamBySlug(slug: string) {
 
 export async function getPublicHomeDiscovery() {
   const db = getDb();
-  const parentCategory = alias(categories, "home_parent_category");
-  const pathCategory = alias(categories, "home_path_category");
-  const [rootCategories, publishedExams] = await Promise.all([
-    db.select({ id: categories.id, name: categories.name, slug: categories.slug, description: categories.description, locale: categories.locale, direction: categories.direction }).from(categories).where(and(isNull(categories.parentId), eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder)).limit(6),
-    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryName: categories.name, categorySlug: categories.slug, levelName: parentCategory.name, levelSlug: parentCategory.slug, pathName: pathCategory.name, pathSlug: pathCategory.slug }).from(exams).innerJoin(categories, eq(exams.categoryId, categories.id)).leftJoin(parentCategory, eq(categories.parentId, parentCategory.id)).leftJoin(pathCategory, eq(parentCategory.parentId, pathCategory.id)).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt), eq(categories.status, "ACTIVE"))).orderBy(asc(exams.publishedAt)).limit(48)
+  const [categoryRows, examRows] = await Promise.all([
+    db.select({ id: categories.id, parentId: categories.parentId, name: categories.name, slug: categories.slug, description: categories.description, locale: categories.locale, direction: categories.direction }).from(categories).where(and(eq(categories.status, "ACTIVE"), isNull(categories.deletedAt))).orderBy(asc(categories.sortOrder)),
+    db.select({ id: exams.id, slug: exams.slug, title: exams.title, shortDescription: exams.shortDescription, locale: exams.locale, direction: exams.direction, durationSeconds: exams.durationSeconds, difficulty: exams.difficulty, categoryId: exams.categoryId }).from(exams).where(and(eq(exams.status, "PUBLISHED"), isNull(exams.deletedAt))).orderBy(asc(exams.publishedAt))
   ]);
+  const byId = new Map(categoryRows.map((category) => [category.id, category]));
+  const lineage = (categoryId: string) => {
+    const result = [] as typeof categoryRows;
+    let current = byId.get(categoryId);
+    while (current) { result.unshift(current); current = current.parentId ? byId.get(current.parentId) : undefined; }
+    return result;
+  };
+  const rootCategories = categoryRows.filter((category) => !category.parentId);
+  const publishedExams = examRows.flatMap((exam) => {
+    const trail = lineage(exam.categoryId);
+    const leaf = trail.at(-1);
+    const root = trail[0];
+    if (!leaf || !root) return [];
+    const level = trail[1] ?? leaf;
+    return [{ ...exam, categoryName: leaf.name, categorySlug: leaf.slug, levelName: level.name, levelSlug: level.slug, pathName: root.name, pathSlug: root.slug }];
+  });
   return { rootCategories, publishedExams };
 }
 
