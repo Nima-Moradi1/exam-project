@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 
 import { writeAuditLog } from "@/lib/audit/service";
@@ -103,39 +104,39 @@ export async function startAttempt(examId: string): Promise<PublicAttemptDto> {
   const orderedQuestions = exam.randomizeQuestionOrder ? shuffle(questions) : questions;
   const startedAt = new Date();
   const expiresAt = new Date(startedAt.getTime() + exam.durationSeconds * 1_000);
-  const attempt = await db.transaction(async (transaction) => {
-    const [created] = await transaction.insert(examAttempts).values({
-      userId: user.id, examId: exam.id, status: "IN_PROGRESS", startedAt, expiresAt, lastActivityAt: startedAt,
+  const attemptId = randomUUID();
+  const snapshots = orderedQuestions.map((item, index) => {
+    const optionIds = exam.randomizeOptionOrder ? shuffle(item.options.map((option) => option.id)) : item.options.map((option) => option.id);
+    const publicSnapshot = toPublicQuestionSnapshot(item, exam.locale, exam.direction, index + 1, optionIds);
+    const gradingSnapshot: GradingSnapshot = {
+      version: 1, type: item.question.type, points: item.question.points, negativePoints: item.question.negativePoints,
+      gradingMode: item.question.gradingMode, settings: item.question.settings,
+      correctOptionIds: item.options.filter((option) => option.isCorrect).map((option) => option.id),
+      correctBoolean: item.question.type === "TRUE_FALSE" ? item.options.find((option) => option.isCorrect)?.value === "true" : undefined,
+      acceptedAnswers: item.acceptedAnswers.map((answer) => answer.answer),
+      numericTarget: typeof item.question.settings.target === "number" ? item.question.settings.target : undefined,
+      ordering: Array.isArray(item.question.settings.ordering) ? item.question.settings.ordering.filter((id): id is string => typeof id === "string") : undefined,
+      matchingPairs: Array.isArray(item.question.settings.pairs) ? item.question.settings.pairs.filter((pair): pair is { leftId: string; rightId: string } => Boolean(pair) && typeof pair === "object" && typeof (pair as { leftId?: unknown }).leftId === "string" && typeof (pair as { rightId?: unknown }).rightId === "string") : undefined,
+      explanation: item.question.explanation, modelAnswer: item.question.modelAnswer, topicIds: item.topicIds
+    };
+    return { attemptId, sourceQuestionId: item.question.id, position: index + 1, publicSnapshot, gradingSnapshot, maxPoints: item.question.points };
+  });
+  // neon-http supports atomic batches, but not interactive db.transaction callbacks.
+  await db.batch([
+    db.insert(examAttempts).values({
+      id: attemptId, userId: user.id, examId: exam.id, status: "IN_PROGRESS", startedAt, expiresAt, lastActivityAt: startedAt,
       maxPoints: orderedQuestions.reduce((total, item) => total + item.question.points, 0),
       questionOrder: orderedQuestions.map((item) => item.question.id), optionOrder: {}
-    }).returning();
-    if (!created) throw new Error("ATTEMPT_CREATION_FAILED");
-    const snapshots = orderedQuestions.map((item, index) => {
-      const optionIds = exam.randomizeOptionOrder ? shuffle(item.options.map((option) => option.id)) : item.options.map((option) => option.id);
-      const publicSnapshot = toPublicQuestionSnapshot(item, exam.locale, exam.direction, index + 1, optionIds);
-      const gradingSnapshot: GradingSnapshot = {
-        version: 1, type: item.question.type, points: item.question.points, negativePoints: item.question.negativePoints,
-        gradingMode: item.question.gradingMode, settings: item.question.settings,
-        correctOptionIds: item.options.filter((option) => option.isCorrect).map((option) => option.id),
-        correctBoolean: item.question.type === "TRUE_FALSE" ? item.options.find((option) => option.isCorrect)?.value === "true" : undefined,
-        acceptedAnswers: item.acceptedAnswers.map((answer) => answer.answer),
-        numericTarget: typeof item.question.settings.target === "number" ? item.question.settings.target : undefined,
-        ordering: Array.isArray(item.question.settings.ordering) ? item.question.settings.ordering.filter((id): id is string => typeof id === "string") : undefined,
-        matchingPairs: Array.isArray(item.question.settings.pairs) ? item.question.settings.pairs.filter((pair): pair is { leftId: string; rightId: string } => Boolean(pair) && typeof pair === "object" && typeof (pair as { leftId?: unknown }).leftId === "string" && typeof (pair as { rightId?: unknown }).rightId === "string") : undefined,
-        explanation: item.question.explanation, modelAnswer: item.question.modelAnswer, topicIds: item.topicIds
-      };
-      return { attemptId: created.id, sourceQuestionId: item.question.id, position: index + 1, publicSnapshot, gradingSnapshot, maxPoints: item.question.points };
-    });
-    await transaction.insert(attemptQuestionSnapshots).values(snapshots);
-    return created;
-  });
+    }),
+    db.insert(attemptQuestionSnapshots).values(snapshots)
+  ]);
   try {
-    await writeAuditLog({ actorUserId: user.id, action: "START_ATTEMPT", entityType: "attempt", entityId: attempt.id });
+    await writeAuditLog({ actorUserId: user.id, action: "START_ATTEMPT", entityType: "attempt", entityId: attemptId });
   } catch (error) {
     // Audit failures must never discard an already-created, immutable attempt.
     console.error("Could not write start-attempt audit log", error);
   }
-  return getAttemptForUser(attempt.id, user.id, user.role as Role);
+  return getAttemptForUser(attemptId, user.id, user.role as Role);
 }
 
 export async function getAttemptForUser(attemptId: string, actorId?: string, actorRole?: Role): Promise<PublicAttemptDto> {
