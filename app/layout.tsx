@@ -10,6 +10,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "آزمون‌های HTML و CSS | سنجش دانش وب",
   description: "آزمون‌های فارسی و تعاملی HTML و CSS با ارزیابی امن سمت سرور",
+  other: { google: "notranslate" },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: "/icon.svg",
@@ -33,7 +34,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="fa" dir="rtl" suppressHydrationWarning>
+    <html lang="fa" dir="rtl" translate="no" suppressHydrationWarning>
       <body>
         <ThemeProvider>
           <a className="skip-link" href="#main-content">پرش به محتوای اصلی</a>
