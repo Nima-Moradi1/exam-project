@@ -40,7 +40,7 @@ export function SignupForm() {
         void onSubmit(new FormData(event.currentTarget));
       }}
     >
-      <AppTextField fieldClassName="auth-form__field" id="displayName" label={<><span aria-hidden="true">اختیاری</span> نام نمایشی</>} name="displayName" autoComplete="name" maxLength={120} />
+      <AppTextField fieldClassName="auth-form__field" id="displayName" label={<>نام نمایشی (اختیاری)</>} name="displayName" autoComplete="name" maxLength={120} />
       <AppTextField fieldClassName="auth-form__field" id="username" label="نام کاربری" name="username" autoComplete="username" required minLength={3} maxLength={30} pattern="[a-z0-9_-]+" dir="ltr" />
       <AppTextField fieldClassName="auth-form__field" id="email" label="ایمیل" name="email" type="email" autoComplete="email" required dir="ltr" />
       <AppTextField fieldClassName="auth-form__field" id="password" label="رمز عبور" name="password" type="password" autoComplete="new-password" required minLength={10} />
