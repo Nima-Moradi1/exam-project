@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { CSSProperties, ReactNode } from "react";
-import { BookOpen, Check, ChevronLeft, CircleAlert, Clock3, FileText, GraduationCap, ListChecks, Target, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent, ReactNode } from "react";
+import { ArrowLeft, ArrowRight, BookOpen, Check, ChevronLeft, CircleAlert, Clock3, Download, FileText, GraduationCap, ListChecks, Target, X } from "lucide-react";
+import Link from "next/link";
 import { AppSelect } from "@/components/ui/form-controls";
 
 type ResultItem = {
@@ -42,16 +43,51 @@ function SectionHeading({ icon, eyebrow, title, description, id }: { icon: React
   </div>;
 }
 
+function AnswerCard({ item }: { item: ResultItem }) {
+  return <article className="result-item" id={`result-${item.snapshotId}`} dir={item.question.direction}>
+    <header><span className="result-item__number">پرسش {item.position}</span><span className={`status status--${item.status.toLowerCase()}`}>{labels[item.status]}</span></header>
+    <h3>{item.question.prompt}</h3>
+    <dl>
+      <div className="result-answer result-answer--yours"><dt>پاسخ شما</dt><dd>{answerText(item, item.answer)}</dd></div>
+      <div className="result-answer result-answer--correct"><dt>پاسخ درست</dt><dd>{item.correctOptionIds.length ? item.correctOptionIds.map((id) => item.question.options.find((option) => option.id === id)?.label ?? id).join("، ") : item.acceptedAnswers.join("، ") || item.modelAnswer || "پس از بررسی اعلام می‌شود"}</dd></div>
+      <div className="result-answer result-answer--points"><dt>امتیاز این پرسش</dt><dd>{item.pointsAwarded}</dd></div>
+    </dl>
+    {item.explanation && <aside className="result-item__explanation"><BookOpen aria-hidden="true" /><p><strong>نکتهٔ آموزشی</strong>{item.explanation}</p></aside>}
+  </article>;
+}
+
 export function AttemptResults({ result }: { result: { attempt: { scorePercent: number | null; scorePoints: number | null; maxPoints: number; message: string | null; direction: "AUTO" | "LTR" | "RTL" }; items: ResultItem[]; recommendation: Recommendation | null } }) {
   const [filter, setFilter] = useState<"ALL" | ResultItem["status"]>("ALL");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const pointerStart = useRef<number | null>(null);
   const counts = useMemo(() => result.items.reduce<Record<ResultItem["status"], number>>((total, item) => ({ ...total, [item.status]: total[item.status] + 1 }), { CORRECT: 0, INCORRECT: 0, PARTIALLY_CORRECT: 0, UNANSWERED: 0, PENDING_REVIEW: 0 }), [result.items]);
   const score = Math.max(0, Math.min(100, result.attempt.scorePercent ?? 0));
   const visible = useMemo(() => result.items.filter((item) => filter === "ALL" || item.status === filter), [filter, result.items]);
   const reviewed = counts.CORRECT + counts.INCORRECT + counts.PARTIALLY_CORRECT;
   const scoreTone = score >= 70 ? "success" : score >= 45 ? "warning" : "needs-work";
   const scoreTitle = score >= 70 ? "عملکرد قابل‌اتکا" : score >= 45 ? "پیشرفت خوبی در راه است" : "نقطهٔ شروع روشن است";
+  const activeItem = visible[activeIndex];
 
-  return <main id="main-content" className="results page-shell" dir={result.attempt.direction === "LTR" ? "ltr" : "rtl"}>
+  function moveSlide(direction: number) {
+    setActiveIndex((current) => Math.max(0, Math.min(visible.length - 1, current + direction)));
+  }
+
+  function showAnswer(snapshotId: string) {
+    const index = visible.findIndex((item) => item.snapshotId === snapshotId);
+    if (index < 0) return;
+    setActiveIndex(index);
+    requestAnimationFrame(() => document.getElementById("details-title")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  function handlePointerUp(event: PointerEvent<HTMLDivElement>) {
+    if (pointerStart.current === null) return;
+    const distance = event.clientX - pointerStart.current;
+    pointerStart.current = null;
+    if (Math.abs(distance) < 42) return;
+    moveSlide(distance > 0 ? 1 : -1);
+  }
+
+  return <main id="main-content" className="results page-shell" dir="rtl">
     <section className={`result-report-hero result-report-hero--${scoreTone}`} aria-labelledby="result-title">
       <div className="result-report-hero__copy">
         <span className="result-report-hero__eyebrow"><Target aria-hidden="true" /> کارنامهٔ آزمون</span>
@@ -90,14 +126,20 @@ export function AttemptResults({ result }: { result: { attempt: { scorePercent: 
     </section>}
 
     <section className="result-status-sheet" aria-labelledby="status-sheet-title">
-      <div className="result-status-sheet__top"><SectionHeading icon={<ListChecks />} eyebrow="مرور سریع" title="پاسخ‌برگ فشرده" description="روی هر شماره بزنید تا به پاسخ تشریحی همان پرسش بروید." id="status-sheet-title" /><AppSelect className="result-status-sheet__filter" label="نمایش پاسخ‌ها" onChange={(value) => setFilter(value as typeof filter)} options={[{ value: "ALL", label: "همهٔ پاسخ‌ها" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))]} value={filter} /></div>
+      <div className="result-status-sheet__top"><SectionHeading icon={<ListChecks />} eyebrow="مرور سریع" title="پاسخ‌برگ فشرده" description="روی هر شماره بزنید تا به پاسخ تشریحی همان پرسش بروید." id="status-sheet-title" /><AppSelect className="result-status-sheet__filter" label="نمایش پاسخ‌ها" onChange={(value) => { setFilter(value as typeof filter); setActiveIndex(0); }} options={[{ value: "ALL", label: "همهٔ پاسخ‌ها" }, ...Object.entries(labels).map(([value, label]) => ({ value, label }))]} value={filter} /></div>
       <div className="status-legend" aria-label="راهنمای رنگ وضعیت‌ها"><span className="status-legend__correct">درست</span><span className="status-legend__incorrect">نادرست</span><span className="status-legend__partial">نیمه‌درست</span><span className="status-legend__empty">بی‌پاسخ</span></div>
-      <div className="status-grid">{result.items.map((item) => <a key={item.snapshotId} href={`#result-${item.snapshotId}`} aria-label={`پرسش ${item.position}، ${labels[item.status]}`} className={`status status--${item.status.toLowerCase()}`}><b>{item.position}</b><span>{labels[item.status]}</span></a>)}</div>
+      <div className="status-grid">{result.items.map((item) => <a key={item.snapshotId} href="#details-title" onClick={(event) => { event.preventDefault(); showAnswer(item.snapshotId); }} aria-label={`نمایش پرسش ${item.position}، ${labels[item.status]}`} className={`status status--${item.status.toLowerCase()}`}><b>{item.position}</b><span>{labels[item.status]}</span></a>)}</div>
     </section>
 
     <section className="detailed-answers" aria-labelledby="details-title">
-      <SectionHeading icon={<FileText />} eyebrow="تحلیل پاسخ‌ها" title="پاسخ‌نامهٔ تشریحی" description={filter === "ALL" ? "هر پاسخ را با جواب درست و نکتهٔ آموزشی مقایسه کنید." : `${visible.length} پاسخ با فیلتر انتخاب‌شده نمایش داده می‌شود.`} id="details-title" />
-      <div className="detailed-answers__list">{visible.map((item) => <article className="result-item" key={item.snapshotId} id={`result-${item.snapshotId}`} dir={item.question.direction}><header><span className="result-item__number">پرسش {item.position}</span><span className={`status status--${item.status.toLowerCase()}`}>{labels[item.status]}</span></header><h3>{item.question.prompt}</h3><dl><div className="result-answer result-answer--yours"><dt>پاسخ شما</dt><dd>{answerText(item, item.answer)}</dd></div><div className="result-answer result-answer--correct"><dt>پاسخ درست</dt><dd>{item.correctOptionIds.length ? item.correctOptionIds.map((id) => item.question.options.find((option) => option.id === id)?.label ?? id).join("، ") : item.acceptedAnswers.join("، ") || item.modelAnswer || "پس از بررسی اعلام می‌شود"}</dd></div><div className="result-answer result-answer--points"><dt>امتیاز این پرسش</dt><dd>{item.pointsAwarded}</dd></div></dl>{item.explanation && <aside className="result-item__explanation"><BookOpen aria-hidden="true" /><p><strong>نکتهٔ آموزشی</strong>{item.explanation}</p></aside>}</article>)}</div>
+      <SectionHeading icon={<FileText />} eyebrow="تحلیل پاسخ‌ها" title="پاسخ‌نامهٔ تشریحی" description={filter === "ALL" ? "پاسخ‌ها را یکی‌یکی ورق بزنید یا با لمس صفحه بین آن‌ها جابه‌جا شوید." : `${visible.length} پاسخ با فیلتر انتخاب‌شده نمایش داده می‌شود.`} id="details-title" />
+      {activeItem ? <div className="result-carousel" role="region" aria-roledescription="carousel" aria-label="پاسخ‌نامهٔ تشریحی" onPointerDown={(event) => { pointerStart.current = event.clientX; }} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }}>
+        <div className="result-carousel__top"><span>پرسش {activeIndex + 1} از {visible.length}</span><span>{labels[activeItem.status]}</span></div>
+        <div className="result-carousel__slide" key={activeItem.snapshotId} role="group" aria-roledescription="slide" aria-label={`پرسش ${activeIndex + 1} از ${visible.length}`}><AnswerCard item={activeItem} /></div>
+        <div className="result-carousel__controls"><button type="button" onClick={() => moveSlide(1)} disabled={activeIndex === visible.length - 1} aria-label="پاسخ بعدی"><ArrowRight aria-hidden="true" /> پاسخ بعدی</button><div aria-live="polite"><b>{activeIndex + 1}</b> / {visible.length}</div><button type="button" onClick={() => moveSlide(-1)} disabled={activeIndex === 0} aria-label="پاسخ قبلی">پاسخ قبلی <ArrowLeft aria-hidden="true" /></button></div>
+      </div> : <p className="result-carousel__empty">پاسخی با این وضعیت پیدا نشد.</p>}
+      <aside className="result-actions" aria-label="اقدام‌های پاسخ‌نامه"><div><span><FileText aria-hidden="true" /> پروندهٔ نتیجه</span><h3>کارنامه‌تان همیشه در دسترس است</h3><p>یک رکورد کامل از این آزمون در بخش «نتایج من» پروفایلتان ذخیره می‌شود و هر زمان می‌توانید دوباره آن را ببینید.</p></div><div className="result-actions__buttons"><button type="button" onClick={() => window.print()}><Download aria-hidden="true" /> دانلود و ذخیرهٔ PDF</button><Link href="/#exams">بازگشت به آزمون‌ها <ChevronLeft aria-hidden="true" /></Link></div></aside>
+      <div className="result-print-sheet" aria-hidden="true">{result.items.map((item) => <AnswerCard item={item} key={`print-${item.snapshotId}`} />)}</div>
     </section>
   </main>;
 }
