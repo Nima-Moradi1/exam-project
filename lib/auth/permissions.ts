@@ -5,6 +5,7 @@ export const permissions = [
   "resource:manage", "media:manage",
   "user:read", "user:update", "user:suspend", "user:role",
   "attempt:read:any", "attempt:grade", "attempt:cancel",
+  "exam-request:read:any", "exam-request:update",
   "audit:read", "settings:manage"
 ] as const;
 
@@ -22,6 +23,7 @@ const adminPermissions: readonly Permission[] = [
   ...managerPermissions,
   "user:read", "user:update", "user:suspend", "user:role",
   "attempt:read:any", "attempt:grade", "attempt:cancel", "audit:read", "settings:manage"
+  , "exam-request:read:any", "exam-request:update"
 ];
 
 export function hasPermission(role: Role, permission: Permission) {

@@ -3207,6 +3207,15 @@ button:not(:disabled) {
 .required-mark { color: var(--danger, #df4f4f); font-weight: 900; }
 .form-hint--terms { color: var(--accent); }
 
+.exam-request-page { min-block-size: calc(100svh - 164px); display: grid; place-items: center; padding-block: 48px; }
+.exam-request-form { inline-size: min(100%, 780px); padding: clamp(24px, 5vw, 52px); border: 1px solid color-mix(in srgb, var(--green) 30%, var(--line)); border-radius: 28px; background: linear-gradient(145deg, color-mix(in srgb, var(--green-soft) 50%, var(--surface)), var(--surface) 48%); box-shadow: var(--shadow-md); }
+.exam-request-form__intro { max-inline-size: 620px; margin-block-end: 28px; }.exam-request-form__intro h1 { margin: 9px 0; font-size: clamp(1.8rem, 4vw, 2.8rem); }.exam-request-form__intro p { color: var(--text-soft); line-height: 2; }
+.exam-request-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }.exam-request-form__full { grid-column: 1 / -1; }.exam-request-form__submit { inline-size: 100%; margin-block-start: 22px; }
+.request-list__heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-block-end: 24px; }.request-list__heading h1 { margin: 8px 0; }.request-list__heading p { color: var(--text-soft); }
+.request-list__items { display: grid; gap: 12px; }.request-list__items article { display: grid; grid-template-columns: 1fr auto; gap: 9px 18px; padding: 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface-soft); }.request-list__items h2 { margin: 0; font-size: 1rem; }.request-list__items p { margin: 3px 0; color: var(--text-soft); }.request-list__description { grid-column: 1 / -1; line-height: 1.8; }.request-list__items small { color: var(--text-soft); }
+.admin-inline-form { display: flex; gap: 6px; }.admin-inline-form select, .admin-inline-form button { min-block-size: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); padding-inline: 8px; }.admin-inline-form button { cursor: pointer; color: #fff; border-color: var(--green); background: var(--green); }
+@media (max-width: 640px) { .exam-request-form__grid { grid-template-columns: 1fr; }.exam-request-form__full { grid-column: auto; }.request-list__heading { align-items: stretch; flex-direction: column; }.request-list__items article { grid-template-columns: 1fr; }.request-list__items .admin-badge { justify-self: start; }.admin-inline-form { flex-wrap: wrap; } }
+
 .auth-footer {
   margin-block: 16px 0;
   font-size: .82rem;

@@ -15,3 +15,4 @@ export const assetKind = pgEnum("asset_kind", ["IMAGE", "AUDIO", "VIDEO", "DOCUM
 export const auditAction = pgEnum("audit_action", ["CREATE", "UPDATE", "DELETE", "ARCHIVE", "RESTORE", "PUBLISH", "UNPUBLISH", "ROLE_CHANGE", "STATUS_CHANGE", "LOGIN", "LOGOUT", "START_ATTEMPT", "SUBMIT_ATTEMPT", "ABANDON_ATTEMPT", "MANUAL_GRADE"]);
 export const antiCheatMode = pgEnum("anti_cheat_mode", ["OFF", "WARN", "STRICT"]);
 export const recommendationSource = pgEnum("recommendation_source", ["DETERMINISTIC", "AI"]);
+export const examRequestStatus = pgEnum("exam_request_status", ["PENDING", "REVIEWED", "REJECTED", "COMPLETED"]);
