@@ -129,7 +129,12 @@ export async function startAttempt(examId: string): Promise<PublicAttemptDto> {
     await transaction.insert(attemptQuestionSnapshots).values(snapshots);
     return created;
   });
-  await writeAuditLog({ actorUserId: user.id, action: "START_ATTEMPT", entityType: "attempt", entityId: attempt.id });
+  try {
+    await writeAuditLog({ actorUserId: user.id, action: "START_ATTEMPT", entityType: "attempt", entityId: attempt.id });
+  } catch (error) {
+    // Audit failures must never discard an already-created, immutable attempt.
+    console.error("Could not write start-attempt audit log", error);
+  }
   return getAttemptForUser(attempt.id, user.id, user.role as Role);
 }
 
