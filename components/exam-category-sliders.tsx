@@ -29,25 +29,32 @@ function ExamCategorySlider({ category, index }: { category: ExamCategory; index
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const itemRefs = useRef<Array<HTMLElement | null>>([]);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
   const categoryId = `exam-category-${index}`;
-  const canAdvance = category.exams.length > 1;
+  const canNavigate = category.exams.length > 1;
+  const canAutoAdvance = category.exams.length > 2;
 
   const goTo = useCallback((nextIndex: number) => {
     const normalizedIndex = (nextIndex + category.exams.length) % category.exams.length;
     setActiveIndex(normalizedIndex);
-    itemRefs.current[normalizedIndex]?.scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth", block: "nearest", inline: "start" });
+    const viewport = viewportRef.current;
+    const item = itemRefs.current[normalizedIndex];
+    if (!viewport || !item) return;
+    // Keep the motion inside the horizontal carousel; never scroll the document.
+    const distance = item.getBoundingClientRect().left - viewport.getBoundingClientRect().left;
+    viewport.scrollBy({ left: distance, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [category.exams.length]);
 
   useEffect(() => {
-    if (!canAdvance || isPaused || prefersReducedMotion()) return;
+    if (!canAutoAdvance || isPaused || prefersReducedMotion()) return;
 
     const timer = window.setInterval(() => goTo(activeIndex + 1), AUTO_ADVANCE_DELAY);
     return () => window.clearInterval(timer);
-  }, [activeIndex, canAdvance, goTo, isPaused]);
+  }, [activeIndex, canAutoAdvance, goTo, isPaused]);
 
   return (
     <section
-      className={`exam-category-slider${canAdvance ? "" : " exam-category-slider--single"}`}
+      className={`exam-category-slider${canNavigate ? "" : " exam-category-slider--single"}`}
       aria-labelledby={categoryId}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -63,7 +70,7 @@ function ExamCategorySlider({ category, index }: { category: ExamCategory; index
         </div>
         <div className="exam-category-slider__tools">
           <span className="exam-category-slider__count">{category.exams.length.toLocaleString("fa-IR")} آزمون</span>
-          {canAdvance && (
+          {canNavigate && (
             <div className="exam-category-slider__controls" aria-label={`پیمایش آزمون‌های ${category.name}`}>
               <button type="button" onClick={() => goTo(activeIndex - 1)} aria-label="آزمون قبلی">
                 <ArrowIcon className="exam-category-slider__previous-icon" />
@@ -76,7 +83,7 @@ function ExamCategorySlider({ category, index }: { category: ExamCategory; index
         </div>
       </div>
 
-      <div className="exam-category-slider__viewport" role="region" aria-roledescription="carousel" aria-label={`آزمون‌های ${category.name}`}>
+      <div ref={viewportRef} className="exam-category-slider__viewport" role="region" aria-roledescription="carousel" aria-label={`آزمون‌های ${category.name}`}>
         <div className="exam-category-slider__track">
           {category.exams.map((exam, examIndex) => (
             <article
@@ -95,7 +102,7 @@ function ExamCategorySlider({ category, index }: { category: ExamCategory; index
               <div>
                 <span>{exam.detail}</span>
                 <NavigationLink className="hub-exam-card__action" href={exam.href} aria-label={`مشاهده و شروع ${exam.label}`}>
-                  مشاهده و شروع <ArrowIcon />
+                  مشاهده و شروع <ArrowIcon className="hub-exam-card__action-icon" />
                 </NavigationLink>
               </div>
             </article>
@@ -103,7 +110,7 @@ function ExamCategorySlider({ category, index }: { category: ExamCategory; index
         </div>
       </div>
 
-      {canAdvance && (
+      {canNavigate && (
         <div className="exam-category-slider__dots" aria-label={`انتخاب آزمون از دسته ${category.name}`}>
           {category.exams.map((exam, examIndex) => (
             <button

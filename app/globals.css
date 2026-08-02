@@ -2000,6 +2000,7 @@ button:not(:disabled) {
 .hub-exam-card > div a { display: inline-flex; align-items: center; gap: 5px; padding: 8px 11px; color: var(--text); border: 1px solid transparent; border-radius: 9px; background: color-mix(in srgb, var(--exam-card-wash) 75%, var(--surface)); font-size: 0.72rem; font-weight: 800; text-decoration: none; transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease; }
 .hub-exam-card > div a:hover { color: #fff; background: var(--exam-card-accent); }
 .hub-exam-card > div svg { width: 16px; height: 16px; }
+.hub-exam-card__action-icon { transform: rotate(180deg); }
 
 .dark .hub-exam-card {
   background: linear-gradient(135deg, color-mix(in srgb, var(--exam-card-accent) 17%, var(--surface)), var(--surface) 68%);
